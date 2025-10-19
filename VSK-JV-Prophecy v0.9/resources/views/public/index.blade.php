@@ -40,18 +40,23 @@
                         @endif
                         <div>
                             <p style="font-size: 0.9rem; font-weight: 700; color: #1e293b; margin: 0; line-height: 1.2;">{{ auth()->user()->name }}</p>
-                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; font-weight: 500;">Super Administrator</p>
+                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; font-weight: 500;">{{ auth()->user()->primary_role }}</p>
                         </div>
                     </div>
                     
                     <!-- Executive Action Buttons -->
-                    <div style="display: flex; gap: 0.75rem;">
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                         @if(auth()->user()->hasAnyRole(['super_admin', 'admin', 'editor']))
                         <a href="{{ route('admin.dashboard') }}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 0.75rem 1.25rem; border-radius: 12px; font-weight: 600; font-size: 0.875rem; text-decoration: none; box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: none; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(124, 58, 237, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(124, 58, 237, 0.3)';">
                             <i class="fas fa-cog"></i>
                             <span>Admin</span>
                         </a>
                         @endif
+                        
+                        <a href="{{ route('change-password') }}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; padding: 0.75rem 1.25rem; border-radius: 12px; font-weight: 600; font-size: 0.875rem; text-decoration: none; box-shadow: 0 4px 16px rgba(8, 145, 178, 0.3); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: none; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(8, 145, 178, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(8, 145, 178, 0.3)';">
+                            <i class="fas fa-key"></i>
+                            <span>Change Password</span>
+                        </a>
                         
                         <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                             @csrf

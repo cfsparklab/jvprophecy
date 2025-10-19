@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Storage;
 @section('title', ($translation ? $translation->title : $prophecy->title) . ' - Jebikalam Vaanga Prophecy')
 
 @section('content')
-<!-- Professional User-End Prophecy View -->
-<div style="min-height: 100vh; background: linear-gradient(135deg, var(--intel-gray-50) 0%, var(--intel-blue-50) 100%);">
+<!-- Professional Book-Style Themes -->
+@include('components.book-styles')
+
+<div style="min-height: 100vh;" class="paper-background">
     
     <!-- Professional Header -->
     <header style="background: white; box-shadow: var(--shadow-sm); border-bottom: 1px solid var(--intel-gray-200);">
@@ -97,18 +99,38 @@ use Illuminate\Support\Facades\Storage;
             </div>
         </div>
         
-        <!-- Prophecy Content Card -->
-        <article class="intel-card" style="max-width: 900px; margin: 0 auto; padding: var(--space-xl);">
+        <!-- Book-Style Content -->
+        <article class="book-page page-curl" style="max-width: 850px; margin: 0 auto; padding: 3.5rem 4rem 4rem 4rem; position: relative;">
+            
+            <!-- Decorative page number top -->
+            <div style="position: absolute; top: 1.5rem; right: 2rem; font-family: 'Cinzel', serif; font-size: 0.875rem; font-weight: 600;" class="theme-accent-dark">
+                {{ date('d.m.Y') }}
+            </div>
+            
+            <!-- Decorative ornament -->
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <svg width="100" height="20" viewBox="0 0 100 20" style="opacity: 0.6;">
+                    <path d="M0 10 Q25 5, 50 10 T100 10" fill="none" stroke="var(--accent-color)" stroke-width="1.5"/>
+                    <circle cx="50" cy="10" r="3" fill="var(--accent-color)"/>
+                    <circle cx="25" cy="8" r="1.5" fill="var(--accent-color)"/>
+                    <circle cx="75" cy="8" r="1.5" fill="var(--accent-color)"/>
+                </svg>
+            </div>
             
             <!-- Prophecy Header -->
-            <header style="margin-bottom: var(--space-xl); text-align: center; border-bottom: 2px solid var(--intel-gray-200); padding-bottom: var(--space-xl);">
-                <h1 style="margin: 0 0 var(--space-md) 0; font-size: 2.25rem; font-weight: 700; color: var(--intel-gray-900); line-height: 1.2;">
+            <header style="margin-bottom: 3rem; text-align: center; padding-bottom: 2rem;" class="theme-border">
+                <h1 style="margin: 0 0 1rem 0; font-family: 'Cinzel', serif; font-size: 2.5rem; font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; text-shadow: 1px 1px 2px var(--shadow-color);" class="theme-heading">
                     @if($translation && $translation->title)
                         {{ $translation->title }}
                     @else
                         {{ $prophecy->title }}
                     @endif
                 </h1>
+                
+                <!-- Subtitle ornament -->
+                <div style="font-family: 'Merriweather', serif; font-size: 0.95rem; font-style: italic; margin-top: 0.5rem;" class="theme-accent-dark">
+                    Divine Revelation • {{ $prophecy->jebikalam_vanga_date->format('F d, Y') }}
+                </div>
                 
                 
                 <!-- Action Buttons -->
@@ -133,8 +155,6 @@ use Illuminate\Support\Facades\Storage;
                         
                         @if($hasPdf)
                             <a href="{{ route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $language]) }}" 
-                               download="prophecy_{{ $prophecy->id }}_{{ $language }}.pdf"
-                               class="download-pdf-btn"
                                style="background: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;" 
                                onmouseover="this.style.background='#059669'" 
                                onmouseout="this.style.background='#10b981'">
@@ -164,17 +184,23 @@ use Illuminate\Support\Facades\Storage;
             </div>
             @endif
             
-            <!-- Excerpt -->
+            <!-- Excerpt - Illuminated Quote -->
             @if(($translation && $translation->excerpt) || $prophecy->excerpt)
-            <div style="background: linear-gradient(135deg, var(--intel-blue-50) 0%, var(--intel-blue-100) 100%); border-left: 4px solid var(--intel-blue-500); padding: var(--space-lg); margin-bottom: var(--space-xl); border-radius: var(--radius-md);">
-                <p style="margin: 0; font-size: 1.125rem; font-weight: 500; color: var(--intel-blue-900); line-height: 1.6;">
+            <div class="theme-bg-accent theme-border" style="border-left-width: 4px; border-right-width: 4px; padding: 2rem; margin-bottom: 3rem; border-radius: 4px; position: relative; box-shadow: inset 0 0 20px var(--quote-bg);">
+                <!-- Opening quote mark -->
+                <div style="position: absolute; top: -10px; left: 20px; font-size: 4rem; opacity: 0.3; font-family: Georgia, serif; line-height: 1;" class="theme-accent">"</div>
+                
+                <p style="margin: 0; font-family: 'Merriweather', serif; font-size: 1.25rem; font-weight: 400; line-height: 1.8; font-style: italic; text-align: center; padding: 0 1rem;" class="theme-heading">
                     {{ ($translation && $translation->excerpt) ? $translation->excerpt : $prophecy->excerpt }}
                 </p>
+                
+                <!-- Closing quote mark -->
+                <div style="position: absolute; bottom: -10px; right: 20px; font-size: 4rem; opacity: 0.3; font-family: Georgia, serif; line-height: 1;" class="theme-accent">"</div>
             </div>
             @endif
             
-            <!-- Main Content -->
-            <div class="prophecy-content" style="font-size: 1rem; line-height: 1.8; color: var(--intel-gray-800);">
+            <!-- Main Content - Book Reading Style -->
+            <div class="reading-content prophecy-content" style="margin-bottom: 3rem;">
                 @if($translation && !empty($translation->content) && strlen($translation->content) > 0)
                     <div class="content-display" lang="{{ $language }}">
                         {!! $translation->content !!}
@@ -221,22 +247,45 @@ use Illuminate\Support\Facades\Storage;
             @endphp
             
             @if($prayerPoints)
-            <section style="margin-top: var(--space-xl); padding-top: var(--space-xl); border-top: 2px solid var(--intel-gray-200);">
-                <header style="margin-bottom: var(--space-lg); text-align: center;">
-                    <h2 style="margin: 0; font-size: 1.75rem; font-weight: 600; color: var(--intel-gray-900); display: flex; align-items: center; justify-content: center; gap: var(--space-sm);">
-                        <i class="fas fa-praying-hands" style="color: var(--intel-blue-600);"></i>
+            <!-- Prayer Points - Decorative Section -->
+            <section style="margin-top: 3rem; padding-top: 3rem; border-top: 3px double var(--accent-color);">
+                <!-- Decorative ornament -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <svg width="120" height="30" viewBox="0 0 120 30" style="opacity: 0.6;">
+                        <path d="M10 15 L50 15 M70 15 L110 15" stroke="var(--accent-color)" stroke-width="1.5"/>
+                        <circle cx="60" cy="15" r="8" fill="none" stroke="var(--accent-color)" stroke-width="1.5"/>
+                        <path d="M55 15 L60 10 L65 15 L60 20 Z" fill="var(--accent-color)"/>
+                    </svg>
+                </div>
+                
+                <header style="margin-bottom: 2rem; text-align: center;">
+                    <h2 style="margin: 0; font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.75rem;" class="theme-heading">
+                        <i class="fas fa-praying-hands theme-accent"></i>
                         Prayer Points
                     </h2>
-                    <p style="margin: var(--space-sm) 0 0 0; color: var(--intel-gray-600); font-size: 0.875rem;">
-                        Specific prayer points for this prophecy
+                    <p style="margin: 0.75rem 0 0 0; font-size: 0.95rem; font-family: 'Merriweather', serif; font-style: italic;" class="theme-accent-dark">
+                        Sacred Intercessions for this Divine Word
                     </p>
                 </header>
                 
-                <div class="prayer-points-content" style="background: linear-gradient(135deg, var(--intel-blue-50) 0%, var(--intel-blue-100) 100%); border: 1px solid var(--intel-blue-200); border-radius: var(--radius-lg); padding: var(--space-xl); font-size: 1rem; line-height: 1.8; color: var(--intel-gray-800);" lang="{{ $language }}">
+                <div class="reading-content prayer-points-content theme-bg-accent" style="border: 2px solid var(--border-color); border-radius: 6px; padding: 2.5rem; box-shadow: inset 0 0 30px var(--quote-bg);" lang="{{ $language }}">
                     {!! $prayerPoints !!}
                 </div>
             </section>
             @endif
+            
+            <!-- Closing ornament -->
+            <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                <svg width="80" height="20" viewBox="0 0 80 20" style="opacity: 0.5;">
+                    <path d="M0 10 L80 10" stroke="var(--accent-color)" stroke-width="1"/>
+                    <circle cx="40" cy="10" r="4" fill="var(--accent-color)"/>
+                    <circle cx="20" cy="10" r="2" fill="var(--accent-color)"/>
+                    <circle cx="60" cy="10" r="2" fill="var(--accent-color)"/>
+                </svg>
+                <p style="margin: 1rem 0 0 0; font-family: 'Cinzel', serif; font-size: 0.875rem; letter-spacing: 0.1em;" class="theme-accent-dark">
+                    ✦ END OF PROPHECY ✦
+                </p>
+            </div>
             
         </article>
         
@@ -734,67 +783,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }).catch(function(error) {
             console.log('View count increment failed:', error);
         });
-    }
-    
-    // Mobile-optimized PDF download handler
-    const pdfDownloadBtn = document.querySelector('.download-pdf-btn');
-    if (pdfDownloadBtn) {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-            pdfDownloadBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const downloadUrl = this.href;
-                const filename = this.getAttribute('download') || 'prophecy.pdf';
-                
-                // Show loading indicator
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-                this.style.pointerEvents = 'none';
-                
-                // Use fetch + blob for better mobile support
-                fetch(downloadUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/pdf',
-                    },
-                    credentials: 'same-origin'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Download failed');
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    // Create blob URL and trigger download
-                    const blobUrl = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = blobUrl;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(blobUrl);
-                    }, 100);
-                    
-                    // Restore button
-                    this.innerHTML = originalText;
-                    this.style.pointerEvents = 'auto';
-                })
-                .catch(error => {
-                    console.error('Download error:', error);
-                    // Restore button and try normal download
-                    this.innerHTML = originalText;
-                    this.style.pointerEvents = 'auto';
-                    window.location.href = downloadUrl;
-                });
-            });
-        }
     }
 });
 </script>

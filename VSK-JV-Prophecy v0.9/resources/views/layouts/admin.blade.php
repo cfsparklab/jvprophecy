@@ -102,8 +102,8 @@
                             </span>
                         </div>
                         <div style="font-size: 0.875rem;">
-                            <p style="font-weight: 600; color: var(--intel-gray-900); margin: 0;">{{ auth()->user()->name ?? 'Super Administrator' }}</p>
-                            <p style="color: var(--intel-gray-500); margin: 0;">Super Administrator</p>
+                            <p style="font-weight: 600; color: var(--intel-gray-900); margin: 0;">{{ auth()->user()->name }}</p>
+                            <p style="color: var(--intel-gray-500); margin: 0;">{{ auth()->user()->primary_role }}</p>
                         </div>
                     </div>
                 </div>

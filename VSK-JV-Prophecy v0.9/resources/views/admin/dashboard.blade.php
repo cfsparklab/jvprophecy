@@ -10,7 +10,7 @@
             <i class="fas fa-tachometer-alt"></i>
             Dashboard
         </h1>
-        <p class="intel-page-subtitle">Welcome back, {{ auth()->user()->name ?? 'Super Administrator' }}! Here's your prophecy management overview.</p>
+        <p class="intel-page-subtitle">Welcome back, {{ auth()->user()->name }}! Here's your prophecy management overview.</p>
     </div>
 </div>
 
@@ -22,7 +22,7 @@
             <div class="intel-stat-header">
                 <div class="intel-stat-content">
                     <h3>Total Prophecies</h3>
-                    <p class="value">{{ $stats['total_prophecies'] ?? 9 }}</p>
+                    <p class="value">{{ $stats['total_prophecies'] }}</p>
                 </div>
                 <div class="intel-stat-icon blue">
                     <i class="fas fa-scroll"></i>
@@ -30,7 +30,7 @@
             </div>
             <div class="intel-stat-footer">
                 <i class="fas fa-check-circle text-green-600"></i>
-                <span>{{ $stats['published_prophecies'] ?? 9 }} published</span>
+                <span>{{ $stats['published_prophecies'] }} published</span>
             </div>
         </div>
         
@@ -39,7 +39,7 @@
             <div class="intel-stat-header">
                 <div class="intel-stat-content">
                     <h3>Total Users</h3>
-                    <p class="value">{{ $stats['total_users'] ?? 13 }}</p>
+                    <p class="value">{{ $stats['total_users'] }}</p>
                 </div>
                 <div class="intel-stat-icon green">
                     <i class="fas fa-users"></i>
@@ -47,7 +47,7 @@
             </div>
             <div class="intel-stat-footer">
                 <i class="fas fa-user-check text-green-600"></i>
-                <span>{{ $stats['active_users'] ?? 11 }} active</span>
+                <span>{{ $stats['active_users'] }} active</span>
             </div>
         </div>
         
@@ -98,55 +98,49 @@
                 <p class="intel-card-subtitle">Latest system activities and updates</p>
             </div>
             <div class="intel-card-body">
+                @if($recentActivities && $recentActivities->count() > 0)
                 <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                    @foreach($recentActivities as $activity)
                     <!-- Activity Item -->
                     <div style="display: flex; align-items: start; gap: var(--space-md); padding: var(--space-md); background: var(--intel-gray-50); border-radius: var(--radius-md);">
-                        <div class="intel-stat-icon blue" style="width: 40px; height: 40px; font-size: 1rem;">
-                            <i class="fas fa-plus"></i>
+                        <div class="intel-stat-icon {{ 
+                            $activity['event_type'] == 'login_success' ? 'green' : 
+                            ($activity['event_type'] == 'prophecy_view' ? 'blue' : 
+                            ($activity['event_type'] == 'prophecy_download' ? 'yellow' : 
+                            ($activity['event_type'] == 'registration_success' ? 'green' : 'blue'))) 
+                        }}" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas {{ 
+                                $activity['event_type'] == 'login_success' ? 'fa-sign-in-alt' : 
+                                ($activity['event_type'] == 'prophecy_view' ? 'fa-eye' : 
+                                ($activity['event_type'] == 'prophecy_download' ? 'fa-download' : 
+                                ($activity['event_type'] == 'prophecy_print' ? 'fa-print' : 
+                                ($activity['event_type'] == 'registration_success' ? 'fa-user-plus' : 'fa-info-circle')))) 
+                            }}"></i>
                         </div>
                         <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">New Prophecy Created</h4>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-600);">"Season of Breakthrough" was published</p>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-500);">2 hours ago</p>
+                            <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">
+                                {{ ucwords(str_replace('_', ' ', $activity['event_type'])) }}
+                            </h4>
+                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-600);">
+                                {{ $activity['user_name'] }} 
+                                @if(isset($activity['metadata']['prophecy_title']))
+                                    - {{ $activity['metadata']['prophecy_title'] }}
+                                @endif
+                            </p>
+                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-500);">
+                                {{ \Carbon\Carbon::parse($activity['event_time'])->diffForHumans() }}
+                                <span style="margin-left: 0.5rem; color: var(--intel-gray-400);">• {{ $activity['ip_address'] }}</span>
+                            </p>
                         </div>
                     </div>
-                    
-                    <!-- Activity Item -->
-                    <div style="display: flex; align-items: start; gap: var(--space-md); padding: var(--space-md); background: var(--intel-gray-50); border-radius: var(--radius-md);">
-                        <div class="intel-stat-icon green" style="width: 40px; height: 40px; font-size: 1rem;">
-                            <i class="fas fa-user-plus"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">New User Registered</h4>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-600);">John Doe joined the platform</p>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-500);">4 hours ago</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Activity Item -->
-                    <div style="display: flex; align-items: start; gap: var(--space-md); padding: var(--space-md); background: var(--intel-gray-50); border-radius: var(--radius-md);">
-                        <div class="intel-stat-icon yellow" style="width: 40px; height: 40px; font-size: 1rem;">
-                            <i class="fas fa-edit"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">Prophecy Updated</h4>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-600);">"The Coming Revival - Part 2" was modified</p>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-500);">6 hours ago</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Activity Item -->
-                    <div style="display: flex; align-items: start; gap: var(--space-md); padding: var(--space-md); background: var(--intel-gray-50); border-radius: var(--radius-md);">
-                        <div class="intel-stat-icon red" style="width: 40px; height: 40px; font-size: 1rem;">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">Security Event</h4>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-600);">Failed login attempt detected</p>
-                            <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--intel-gray-500);">8 hours ago</p>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
+                @else
+                <div style="text-align: center; padding: var(--space-xl); color: var(--intel-gray-500);">
+                    <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: var(--space-md); opacity: 0.5;"></i>
+                    <p style="margin: 0;">No recent activities to display</p>
+                </div>
+                @endif
             </div>
             <div class="intel-card-footer">
                 <a href="#" class="intel-btn intel-btn-secondary intel-btn-sm">
@@ -209,38 +203,52 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-lg);">
                 <!-- Database Status -->
                 <div style="text-align: center; padding: var(--space-md);">
-                    <div class="intel-stat-icon green" style="margin: 0 auto var(--space-sm) auto;">
+                    <div class="intel-stat-icon {{ $systemStatus['database']['status'] == 'operational' ? 'green' : 'red' }}" style="margin: 0 auto var(--space-sm) auto;">
                         <i class="fas fa-database"></i>
                     </div>
                     <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">Database</h4>
-                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--success-color); font-weight: 600;">Operational</p>
+                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: {{ $systemStatus['database']['status'] == 'operational' ? 'var(--success-color)' : 'var(--error-color)' }}; font-weight: 600;">
+                        {{ $systemStatus['database']['label'] }}
+                    </p>
                 </div>
                 
                 <!-- Cache Status -->
                 <div style="text-align: center; padding: var(--space-md);">
-                    <div class="intel-stat-icon green" style="margin: 0 auto var(--space-sm) auto;">
+                    <div class="intel-stat-icon {{ $systemStatus['cache']['status'] == 'optimal' ? 'green' : 'red' }}" style="margin: 0 auto var(--space-sm) auto;">
                         <i class="fas fa-memory"></i>
                     </div>
                     <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">Cache</h4>
-                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--success-color); font-weight: 600;">Optimal</p>
+                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: {{ $systemStatus['cache']['status'] == 'optimal' ? 'var(--success-color)' : 'var(--error-color)' }}; font-weight: 600;">
+                        {{ $systemStatus['cache']['label'] }}
+                    </p>
                 </div>
                 
                 <!-- Storage Status -->
                 <div style="text-align: center; padding: var(--space-md);">
-                    <div class="intel-stat-icon yellow" style="margin: 0 auto var(--space-sm) auto;">
+                    <div class="intel-stat-icon {{ 
+                        $systemStatus['storage']['status'] == 'optimal' ? 'green' : 
+                        ($systemStatus['storage']['status'] == 'warning' ? 'yellow' : 'red') 
+                    }}" style="margin: 0 auto var(--space-sm) auto;">
                         <i class="fas fa-hdd"></i>
                     </div>
                     <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">Storage</h4>
-                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--warning-color); font-weight: 600;">75% Used</p>
+                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: {{ 
+                        $systemStatus['storage']['status'] == 'optimal' ? 'var(--success-color)' : 
+                        ($systemStatus['storage']['status'] == 'warning' ? 'var(--warning-color)' : 'var(--error-color)') 
+                    }}; font-weight: 600;">
+                        {{ $systemStatus['storage']['label'] }}
+                    </p>
                 </div>
                 
-                <!-- API Status -->
+                <!-- App Status -->
                 <div style="text-align: center; padding: var(--space-md);">
-                    <div class="intel-stat-icon green" style="margin: 0 auto var(--space-sm) auto;">
-                        <i class="fas fa-plug"></i>
+                    <div class="intel-stat-icon {{ $systemStatus['app']['status'] == 'production' ? 'green' : 'yellow' }}" style="margin: 0 auto var(--space-sm) auto;">
+                        <i class="fas fa-{{ $systemStatus['app']['status'] == 'production' ? 'check-circle' : 'exclamation-triangle' }}"></i>
                     </div>
-                    <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">API</h4>
-                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: var(--success-color); font-weight: 600;">Healthy</p>
+                    <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-900);">Application</h4>
+                    <p style="margin: var(--space-xs) 0 0 0; font-size: 0.75rem; color: {{ $systemStatus['app']['status'] == 'production' ? 'var(--success-color)' : 'var(--warning-color)' }}; font-weight: 600;">
+                        {{ $systemStatus['app']['label'] }}
+                    </p>
                 </div>
             </div>
         </div>
