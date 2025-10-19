@@ -108,15 +108,20 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getPrimaryRoleAttribute()
     {
-        if ($this->hasRole('super_admin')) {
+        // Load roles once to avoid N+1 queries
+        $roleNames = $this->roles->pluck('name')->toArray();
+        
+        // Check roles in priority order
+        if (in_array('super_admin', $roleNames)) {
             return 'Super Administrator';
-        } elseif ($this->hasRole('admin')) {
+        } elseif (in_array('admin', $roleNames)) {
             return 'Administrator';
-        } elseif ($this->hasRole('editor')) {
+        } elseif (in_array('editor', $roleNames)) {
             return 'Content Editor';
-        } elseif ($this->hasRole('user')) {
+        } elseif (in_array('user', $roleNames)) {
             return 'User';
         }
+        
         return 'Member';
     }
 
