@@ -99,11 +99,5 @@ yarn.lock
 /storage/app/private/*.json
 !/storage/app/private/.gitkeep
 
-# Uploaded files (keep structure, exclude content)
-/storage/app/public/*.pdf
-/storage/app/public/*.png
-/storage/app/public/*.jpg
-/storage/app/temp/*.pdf
-
 # Old version archives (in project root)
 VSK-JV-Prophecy*.zip
