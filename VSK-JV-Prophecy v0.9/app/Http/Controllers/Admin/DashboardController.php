@@ -37,13 +37,91 @@ class DashboardController extends Controller
         
         // Get security alerts
         $securityAlerts = $this->getSecurityAlerts();
+        
+        // Get system status
+        $systemStatus = $this->getSystemStatus();
 
         return view('admin.dashboard', compact(
             'stats', 
             'recentActivities', 
             'prophecyStats', 
-            'securityAlerts'
+            'securityAlerts',
+            'systemStatus'
         ));
+    }
+    
+    /**
+     * Get system status information.
+     */
+    private function getSystemStatus()
+    {
+        try {
+            // Check database connection
+            $databaseStatus = 'operational';
+            try {
+                DB::connection()->getPdo();
+            } catch (\Exception $e) {
+                $databaseStatus = 'error';
+            }
+            
+            // Check cache (if configured)
+            $cacheStatus = 'optimal';
+            try {
+                cache()->put('test_key', 'test_value', 10);
+                cache()->get('test_key');
+            } catch (\Exception $e) {
+                $cacheStatus = 'error';
+            }
+            
+            // Check storage
+            $storageStatus = 'optimal';
+            $storagePercentage = 0;
+            try {
+                $totalSpace = disk_total_space(storage_path());
+                $freeSpace = disk_free_space(storage_path());
+                if ($totalSpace > 0) {
+                    $storagePercentage = round((($totalSpace - $freeSpace) / $totalSpace) * 100);
+                    if ($storagePercentage > 90) {
+                        $storageStatus = 'critical';
+                    } elseif ($storagePercentage > 75) {
+                        $storageStatus = 'warning';
+                    }
+                }
+            } catch (\Exception $e) {
+                $storageStatus = 'error';
+                $storagePercentage = 0;
+            }
+            
+            // Check if app is in debug mode
+            $appStatus = config('app.debug') ? 'debug' : 'production';
+            
+            return [
+                'database' => [
+                    'status' => $databaseStatus,
+                    'label' => ucfirst($databaseStatus)
+                ],
+                'cache' => [
+                    'status' => $cacheStatus,
+                    'label' => ucfirst($cacheStatus)
+                ],
+                'storage' => [
+                    'status' => $storageStatus,
+                    'percentage' => $storagePercentage,
+                    'label' => $storagePercentage . '% Used'
+                ],
+                'app' => [
+                    'status' => $appStatus,
+                    'label' => ucfirst($appStatus) . ' Mode'
+                ]
+            ];
+        } catch (\Exception $e) {
+            return [
+                'database' => ['status' => 'error', 'label' => 'Error'],
+                'cache' => ['status' => 'error', 'label' => 'Error'],
+                'storage' => ['status' => 'error', 'percentage' => 0, 'label' => 'Error'],
+                'app' => ['status' => 'unknown', 'label' => 'Unknown']
+            ];
+        }
     }
 
     /**

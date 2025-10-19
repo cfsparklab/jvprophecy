@@ -115,21 +115,25 @@ class ProphecyController extends Controller
         // Handle PDF file upload
         $pdfData = [];
         if ($request->hasFile('pdf_file')) {
+            $pdfService = app(\App\Services\PdfStorageService::class);
+            
             // Delete old PDF file if exists
-            if ($prophecy->pdf_file && Storage::disk('public')->exists($prophecy->pdf_file)) {
-                Storage::disk('public')->delete($prophecy->pdf_file);
+            if ($prophecy->pdf_file) {
+                $pdfService->deletePdf($prophecy->pdf_file);
             }
             
             $file = $request->file('pdf_file');
             $filename = 'prophecy_main_' . $prophecy->id . '_' . time() . '.pdf';
-            $path = $file->storeAs('prophecy_pdfs', $filename, 'public');
+            $result = $pdfService->storePdf($file, 'prophecy_pdfs', $filename);
             
-            $pdfData = [
-                'pdf_file' => $path,
-                'pdf_uploaded_at' => now(),
-                'pdf_original_name' => $file->getClientOriginalName(),
-                'pdf_file_size' => $file->getSize(),
-            ];
+            if ($result['success']) {
+                $pdfData = [
+                    'pdf_file' => $result['path'],
+                    'pdf_uploaded_at' => now(),
+                    'pdf_original_name' => $result['original_name'],
+                    'pdf_file_size' => $result['size'],
+                ];
+            }
         }
 
         $prophecy->update(array_merge([

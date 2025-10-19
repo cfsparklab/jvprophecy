@@ -302,51 +302,48 @@ public function showProphecy(Request $request, $id)
     }
 
     /**
-     * Download prophecy PDF using uploaded files only
+     * Download prophecy PDF - DIRECT DOWNLOAD (No manipulation)
      */
     public function downloadUploadedProphecyPdf(Request $request, $id)
     {
+        // Check authentication
+        if (!Auth::check()) {
+            return response()->view('errors.auth-required', [
+                'message' => 'Please login to download PDFs.',
+                'login_url' => route('login'),
+                'return_url' => $request->fullUrl()
+            ], 401);
+        }
+
         $language = $request->language ?? (Auth::user()->preferred_language ?? 'en');
 
-        $prophecy = Prophecy::published()
-            ->public()
-            ->with(['category', 'creator', 'translations'])
-            ->findOrFail($id);
+        $prophecy = Prophecy::findOrFail($id);
+        $pdfService = app(\App\Services\PdfStorageService::class);
 
-        // Check for uploaded PDF file based on language
-        $pdfPath = null;
+        // Find the PDF file path based on language
+        $pdfFile = null;
         $originalName = null;
         
         if ($language === 'en') {
             // For English, check main prophecy PDF
-            if ($prophecy->pdf_file && Storage::disk('public')->exists($prophecy->pdf_file)) {
-                $pdfPath = $prophecy->pdf_file;
+            if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
+                $pdfFile = $prophecy->pdf_file;
                 $originalName = $prophecy->pdf_original_name;
             }
         } else {
             // For other languages, check translation PDF
-            $translation = $prophecy->translations->where('language', $language)->first();
-            if ($translation && $translation->pdf_file && Storage::disk('public')->exists($translation->pdf_file)) {
-                $pdfPath = $translation->pdf_file;
+            $translation = $prophecy->translations()->where('language', $language)->first();
+            if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
+                $pdfFile = $translation->pdf_file;
                 $originalName = $translation->pdf_original_name;
             }
         }
 
-        // If no PDF found, return "Coming Soon" message
-        if (!$pdfPath) {
-            $languageName = match($language) {
-                'ta' => 'Tamil (தமிழ்)',
-                'kn' => 'Kannada (ಕನ್ನಡ)',
-                'te' => 'Telugu (తెలుగు)',
-                'ml' => 'Malayalam (മലയാളം)',
-                'hi' => 'Hindi (हिंदी)',
-                default => 'English'
-            };
-
-            return response()->json([
-                'error' => 'PDF not available',
-                'message' => "PDF for this prophecy in {$languageName} is coming soon. Please check back later.",
-                'prophecy_title' => $prophecy->title,
+        // If no PDF found, return error
+        if (!$pdfFile) {
+            return response()->view('errors.pdf-not-found', [
+                'message' => 'PDF not available for this language yet.',
+                'prophecy' => $prophecy,
                 'language' => $language
             ], 404);
         }
@@ -355,55 +352,77 @@ public function showProphecy(Request $request, $id)
         $prophecy->increment('download_count');
 
         // Log download event
-        $this->logSecurityEvent('prophecy_pdf_download', Auth::id(), [
-            'prophecy_id' => $prophecy->id,
-            'prophecy_title' => $prophecy->title,
-            'language' => $language,
-            'jebikalam_vanga_date' => $prophecy->jebikalam_vanga_date->format('d/m/Y'),
-            'pdf_source' => 'uploaded_file'
-        ]);
-
-        // Get translation data for cover page
-        $translation = null;
-        if ($language !== 'en') {
-            $translation = $prophecy->translations->where('language', $language)->first();
+        try {
+            SecurityLog::create([
+                'user_id' => Auth::id(),
+                'event_type' => 'prophecy_pdf_download',
+                'resource_type' => 'prophecy',
+                'resource_id' => $prophecy->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'metadata' => [
+                    'prophecy_title' => $prophecy->title,
+                    'language' => $language,
+                    'filename' => basename($pdfFile)
+                ],
+                'severity' => 'low',
+                'event_time' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail if security logging doesn't work
+            \Log::warning('Security logging failed: ' . $e->getMessage());
         }
-        
-        // If requesting English but no English translation exists, create fallback from main prophecy
-        if ($language === 'en' && !$translation) {
-            $translation = (object) [
-                'language' => 'en',
-                'title' => $prophecy->title,
-                'content' => $prophecy->description ?? 'English content not available.',
-                'description' => $prophecy->excerpt ?? 'English description not available.',
-                'prophecy_id' => $prophecy->id,
-                'excerpt' => $prophecy->excerpt,
-                'prayer_points' => $prophecy->prayer_points
-            ];
-        }
-        
-        // Use PDF merge service to add cover page and footer
-        $pdfMergeService = new PdfMergeService();
-        $mergedPdfContent = $pdfMergeService->addCoverAndFooterToPdf($pdfPath, $prophecy, $translation, $language);
-        
-        // Generate filename for download
-        $title = $prophecy->title;
-        $cleanTitle = preg_replace('/[^A-Za-z0-9\-_]/', '_', $title);
-        $filename = 'prophecy_' . $cleanTitle . '_' . $language . '_' . $prophecy->jebikalam_vanga_date->format('Y-m-d') . '.pdf';
 
-        // Return the merged PDF with comprehensive headers (mobile-optimized)
-        return response($mergedPdfContent, 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
-            ->header('Content-Length', strlen($mergedPdfContent))
-            ->header('Content-Transfer-Encoding', 'binary')
-            ->header('Content-Description', 'File Transfer')
-            ->header('Accept-Ranges', 'bytes')
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0')
-            ->header('X-Content-Type-Options', 'nosniff')
-            ->header('X-Download-Options', 'noopen');
+        // Generate clean filename
+        $cleanTitle = preg_replace('/[^A-Za-z0-9\-_]/', '_', $prophecy->title);
+        $filename = 'prophecy_' . $prophecy->id . '_' . $cleanTitle . '_' . $language . '.pdf';
+
+        // Check if we're using cloud storage
+        $pdfDisk = env('PDF_STORAGE_DISK', 'r2');
+        
+        if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
+            // For cloud storage, redirect to the signed URL
+            $content = $pdfService->getPdfContent($pdfFile);
+            
+            if (!$content) {
+                return response()->view('errors.pdf-not-found', [
+                    'message' => 'PDF could not be retrieved from storage.',
+                    'prophecy' => $prophecy,
+                    'language' => $language
+                ], 404);
+            }
+            
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Description' => 'File Transfer',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        } else {
+            // For local storage, serve the file directly
+            $pdfPath = $pdfService->getPdfPath($pdfFile);
+            
+            if (!$pdfPath || !file_exists($pdfPath)) {
+                return response()->view('errors.pdf-not-found', [
+                    'message' => 'PDF file not found.',
+                    'prophecy' => $prophecy,
+                    'language' => $language
+                ], 404);
+            }
+            
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Description' => 'File Transfer',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
     }
 
     /**

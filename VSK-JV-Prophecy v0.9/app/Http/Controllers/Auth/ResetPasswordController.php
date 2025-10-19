@@ -104,7 +104,7 @@ class ResetPasswordController extends Controller
             if ($user) {
                 Auth::login($user);
                 
-                return redirect()->route('user.dashboard')->with('success', 'Your password has been reset successfully! You are now logged in.');
+                return redirect()->route('home')->with('success', 'Your password has been reset successfully! You are now logged in.');
             }
             
             return redirect()->route('login')->with('success', 'Your password has been reset successfully! Please log in with your new password.');

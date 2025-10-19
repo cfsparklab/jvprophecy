@@ -104,6 +104,31 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the user's primary role display name.
+     */
+    public function getPrimaryRoleAttribute()
+    {
+        if ($this->hasRole('super_admin')) {
+            return 'Super Administrator';
+        } elseif ($this->hasRole('admin')) {
+            return 'Administrator';
+        } elseif ($this->hasRole('editor')) {
+            return 'Content Editor';
+        } elseif ($this->hasRole('user')) {
+            return 'User';
+        }
+        return 'Member';
+    }
+
+    /**
+     * Get all role names for the user.
+     */
+    public function getRoleNames()
+    {
+        return $this->roles->pluck('name')->toArray();
+    }
+
+    /**
      * Check if user has a specific permission.
      */
     public function hasPermission($permission)
