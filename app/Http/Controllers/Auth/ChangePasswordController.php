@@ -12,14 +12,6 @@ use Illuminate\Support\Facades\Log;
 class ChangePasswordController extends Controller
 {
     /**
-     * Create a new controller instance.
-     */
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
-    /**
      * Show the change password form.
      */
     public function showChangePasswordForm()
