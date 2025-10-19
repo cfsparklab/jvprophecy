@@ -318,28 +318,29 @@ public function showProphecy(Request $request, $id)
         $language = $request->language ?? (Auth::user()->preferred_language ?? 'en');
 
         $prophecy = Prophecy::findOrFail($id);
+        $pdfService = app(\App\Services\PdfStorageService::class);
 
         // Find the PDF file path based on language
-        $pdfPath = null;
+        $pdfFile = null;
         $originalName = null;
         
         if ($language === 'en') {
             // For English, check main prophecy PDF
-            if ($prophecy->pdf_file && Storage::disk('public')->exists($prophecy->pdf_file)) {
-                $pdfPath = storage_path('app/public/' . $prophecy->pdf_file);
+            if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
+                $pdfFile = $prophecy->pdf_file;
                 $originalName = $prophecy->pdf_original_name;
             }
         } else {
             // For other languages, check translation PDF
             $translation = $prophecy->translations()->where('language', $language)->first();
-            if ($translation && $translation->pdf_file && Storage::disk('public')->exists($translation->pdf_file)) {
-                $pdfPath = storage_path('app/public/' . $translation->pdf_file);
+            if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
+                $pdfFile = $translation->pdf_file;
                 $originalName = $translation->pdf_original_name;
             }
         }
 
         // If no PDF found, return error
-        if (!$pdfPath || !file_exists($pdfPath)) {
+        if (!$pdfFile) {
             return response()->view('errors.pdf-not-found', [
                 'message' => 'PDF not available for this language yet.',
                 'prophecy' => $prophecy,
@@ -362,7 +363,7 @@ public function showProphecy(Request $request, $id)
                 'metadata' => [
                     'prophecy_title' => $prophecy->title,
                     'language' => $language,
-                    'filename' => basename($pdfPath)
+                    'filename' => basename($pdfFile)
                 ],
                 'severity' => 'low',
                 'event_time' => now(),
@@ -376,16 +377,52 @@ public function showProphecy(Request $request, $id)
         $cleanTitle = preg_replace('/[^A-Za-z0-9\-_]/', '_', $prophecy->title);
         $filename = 'prophecy_' . $prophecy->id . '_' . $cleanTitle . '_' . $language . '.pdf';
 
-        // DIRECT DOWNLOAD - No manipulation, just serve the file
-        return response()->file($pdfPath, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Content-Description' => 'File Transfer',
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        // Check if we're using cloud storage
+        $pdfDisk = env('PDF_STORAGE_DISK', 'r2');
+        
+        if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
+            // For cloud storage, redirect to the signed URL
+            $content = $pdfService->getPdfContent($pdfFile);
+            
+            if (!$content) {
+                return response()->view('errors.pdf-not-found', [
+                    'message' => 'PDF could not be retrieved from storage.',
+                    'prophecy' => $prophecy,
+                    'language' => $language
+                ], 404);
+            }
+            
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Description' => 'File Transfer',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        } else {
+            // For local storage, serve the file directly
+            $pdfPath = $pdfService->getPdfPath($pdfFile);
+            
+            if (!$pdfPath || !file_exists($pdfPath)) {
+                return response()->view('errors.pdf-not-found', [
+                    'message' => 'PDF file not found.',
+                    'prophecy' => $prophecy,
+                    'language' => $language
+                ], 404);
+            }
+            
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Description' => 'File Transfer',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
     }
 
     /**
