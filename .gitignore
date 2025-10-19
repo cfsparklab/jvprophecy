@@ -1,0 +1,109 @@
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+.env.aws
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# Deployment packages
+*.zip
+!.gitkeep.zip
+
+# Database
+*.sqlite
+*.sqlite-journal
+database.sqlite
+
+# Laravel specific
+/bootstrap/cache/*.php
+!/bootstrap/cache/.gitignore
+/storage/logs/*.log
+/storage/framework/cache/**
+/storage/framework/sessions/**
+/storage/framework/views/**
+/storage/app/public/**
+!/storage/app/.gitkeep
+!/storage/app/public/.gitkeep
+!/storage/framework/.gitkeep
+!/storage/framework/cache/.gitkeep
+!/storage/framework/sessions/.gitkeep
+!/storage/framework/views/.gitkeep
+!/storage/logs/.gitkeep
+
+# AWS & Deployment
+.elasticbeanstalk/logs/
+.elasticbeanstalk/*.global.yml
+deploy.zip
+build-temp*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE specific
+*.sublime-project
+*.sublime-workspace
+.vscode/
+.idea/
+*.iml
+
+# Composer
+composer.phar
+auth.json
+
+# NPM
+npm-debug.log
+yarn-error.log
+yarn.lock
+
+# PHP CS Fixer
+.php_cs
+.php_cs.cache
+.php-cs-fixer.cache
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+
+# Private storage
+/storage/app/private/*.json
+!/storage/app/private/.gitkeep
+
+# Uploaded files (keep structure, exclude content)
+/storage/app/public/*.pdf
+/storage/app/public/*.png
+/storage/app/public/*.jpg
+/storage/app/temp/*.pdf
+
+# Old version archives (in project root)
+VSK-JV-Prophecy*.zip
