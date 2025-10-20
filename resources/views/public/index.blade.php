@@ -139,13 +139,6 @@
     <main style="padding-bottom: 4rem; position: relative; z-index: 1;">
         <div class="intel-container" style="max-width: 1200px;">
             
-            <!-- Page Title -->
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <h2 style="font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: -0.5px;">
-                    Select Jebikalaam Vanga Prophecy
-                </h2>
-            </div>
-
             @if(count($groupedByYear) > 0)
                 <!-- Year Tabs -->
                 <div style="text-align: center; margin-bottom: 2.5rem;">
