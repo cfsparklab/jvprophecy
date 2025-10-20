@@ -254,6 +254,57 @@
             </div>
         </div>
         
+        <!-- Featured Image Section -->
+        <div class="intel-form-section">
+            <div class="intel-form-section-header">
+                <h2 class="intel-form-section-title">
+                    <i class="fas fa-image"></i>
+                    Featured Image / Thumbnail
+                </h2>
+                <p class="intel-form-section-subtitle">Upload or update the thumbnail image for this prophecy</p>
+            </div>
+            <div class="intel-form-section-body">
+                <!-- Current Image Display -->
+                @if($prophecy->featured_image)
+                <div style="margin-bottom: var(--space-lg);">
+                    <p style="margin: 0 0 var(--space-sm) 0; font-weight: 600; color: var(--intel-gray-700);">Current Featured Image:</p>
+                    <div style="max-width: 300px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: var(--space-md);">
+                        <img src="{{ Storage::url($prophecy->featured_image) }}" alt="Current Image" style="width: 100%; height: auto; display: block;">
+                    </div>
+                </div>
+                @endif
+                
+                <div class="intel-form-group">
+                    <label for="featured_image" class="intel-form-label">
+                        <i class="fas fa-image mr-2"></i>
+                        {{ $prophecy->featured_image ? 'Replace Featured Image' : 'Featured Image' }}
+                    </label>
+                    <input type="file" 
+                           id="featured_image" 
+                           name="featured_image" 
+                           accept="image/jpeg,image/jpg,image/png,image/webp"
+                           class="intel-form-input @error('featured_image') error @enderror"
+                           onchange="handleImageUpload(this)">
+                    <p class="intel-form-help">Upload a featured image (JPEG, PNG, WEBP - Max: 5MB). Recommended size: 800x1200px (portrait). This will be displayed on the prophecy detail page.</p>
+                    @error('featured_image')
+                    <p class="intel-form-error">{{ $message }}</p>
+                    @enderror
+                    
+                    <!-- Image Preview -->
+                    <div id="image_preview" style="display: none; margin-top: var(--space-md);">
+                        <p style="margin: 0 0 var(--space-sm) 0; font-weight: 600; color: var(--intel-gray-700);">New Image Preview:</p>
+                        <div style="max-width: 300px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <img id="image_preview_img" src="" alt="Preview" style="width: 100%; height: auto; display: block;">
+                        </div>
+                        <button type="button" onclick="removeImageFile()" class="intel-btn intel-btn-sm intel-btn-error" style="margin-top: var(--space-sm);">
+                            <i class="fas fa-times"></i>
+                            Remove New Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- PDF Upload Section -->
         <div class="intel-form-section">
             <div class="intel-form-section-header">
@@ -484,6 +535,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Image Upload Handling Functions
+function handleImageUpload(input) {
+    const file = input.files[0];
+    const preview = document.getElementById('image_preview');
+    const img = document.getElementById('image_preview_img');
+    
+    if (file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please select a valid image file (JPEG, PNG, or WEBP).');
+            input.value = '';
+            preview.style.display = 'none';
+            return;
+        }
+        
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image size must be less than 5MB.');
+            input.value = '';
+            preview.style.display = 'none';
+            return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+function removeImageFile() {
+    const input = document.getElementById('featured_image');
+    const preview = document.getElementById('image_preview');
+    
+    input.value = '';
+    preview.style.display = 'none';
+}
 
 // PDF Upload Handling Functions
 function handlePdfUpload(input, language) {
