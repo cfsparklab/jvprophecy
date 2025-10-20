@@ -145,16 +145,27 @@ use Illuminate\Support\Facades\Storage;
                         <!-- PDF Download (only if uploaded PDF exists) -->
                         @php
                             $hasPdf = false;
+                            $pdfUrl = '';
+                            $pdfService = app(\App\Services\PdfStorageService::class);
+                            
                             if ($language === 'en') {
-                                $hasPdf = $prophecy->pdf_file && Storage::disk('public')->exists($prophecy->pdf_file);
+                                if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
+                                    $hasPdf = true;
+                                    $pdfUrl = $pdfService->getPdfUrl($prophecy->pdf_file);
+                                }
                             } else {
                                 $translation = $prophecy->translations->where('language', $language)->first();
-                                $hasPdf = $translation && $translation->pdf_file && Storage::disk('public')->exists($translation->pdf_file);
+                                if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
+                                    $hasPdf = true;
+                                    $pdfUrl = $pdfService->getPdfUrl($translation->pdf_file);
+                                }
                             }
                         @endphp
                         
-                        @if($hasPdf)
-                            <a href="{{ route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $language]) }}" 
+                        @if($hasPdf && $pdfUrl)
+                            <a href="{{ $pdfUrl }}" 
+                               target="_blank"
+                               download="prophecy_{{ $prophecy->id }}_{{ $language }}.pdf"
                                id="pdf-download-btn"
                                class="pdf-download-link"
                                style="background: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;" 
