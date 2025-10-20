@@ -456,24 +456,16 @@ public function showProphecy(Request $request, $id)
 
     /**
      * Simple, direct PDF download (for mobile compatibility)
+     * MOBILE FIX: Redirect directly to cloud storage URL to bypass Laravel processing
      */
     public function directDownloadPdf(Request $request, $id)
     {
-        // Disable error display and clear output buffers for clean PDF output
-        ini_set('display_errors', 0);
-        error_reporting(0);
-        
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-        
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
         $language = $request->language ?? 'en';
         $prophecy = Prophecy::findOrFail($id);
-        $pdfService = app(\App\Services\PdfStorageService::class);
         
         // Get PDF file path
         if ($language === 'en') {
@@ -483,50 +475,36 @@ public function showProphecy(Request $request, $id)
             $pdfFile = $translation ? $translation->pdf_file : null;
         }
 
-        if (!$pdfFile || !$pdfService->pdfExists($pdfFile)) {
+        if (!$pdfFile) {
             abort(404, 'PDF not found');
         }
-
-        // Simple filename
-        $filename = 'prophecy_' . $prophecy->id . '_' . $language . '.pdf';
 
         // Check storage disk
         $pdfDisk = env('PDF_STORAGE_DISK', 'public');
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
-            // For cloud storage, get content and stream with mobile-optimized headers
-            $content = $pdfService->getPdfContent($pdfFile);
+            // For cloud storage: Redirect directly to cloud URL
+            // This bypasses Laravel completely and lets the browser download directly
+            // Mobile browsers handle direct cloud URLs much better
+            $cloudUrl = \Storage::disk($pdfDisk)->url($pdfFile);
             
-            if (!$content) {
-                abort(404, 'PDF could not be retrieved');
-            }
+            // Add download parameter to force download instead of viewing
+            $cloudUrl .= (strpos($cloudUrl, '?') === false ? '?' : '&') . 'response-content-disposition=attachment';
             
-            // Create response with explicit headers for mobile compatibility
-            return response()->make($content, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                'Content-Length' => strlen($content),
-                'Content-Transfer-Encoding' => 'binary',
-                'Accept-Ranges' => 'bytes',
-                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-                'Pragma' => 'public',
-                'Expires' => '0',
-                'X-Content-Type-Options' => 'nosniff',
-            ]);
+            return redirect($cloudUrl);
         } else {
-            // For local storage, use BinaryFileResponse
+            // For local storage: Serve the file
+            $pdfService = app(\App\Services\PdfStorageService::class);
             $pdfPath = $pdfService->getPdfPath($pdfFile);
             
             if (!$pdfPath || !file_exists($pdfPath)) {
                 abort(404, 'PDF file not found');
             }
             
+            $filename = 'prophecy_' . $prophecy->id . '_' . $language . '.pdf';
+            
             return response()->download($pdfPath, $filename, [
                 'Content-Type' => 'application/pdf',
-                'Content-Transfer-Encoding' => 'binary',
-                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-                'Pragma' => 'public',
-                'Expires' => '0',
             ]);
         }
     }
