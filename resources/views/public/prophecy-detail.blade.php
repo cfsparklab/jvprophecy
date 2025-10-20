@@ -788,12 +788,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Mobile PDF Download Handler
-    // Detects mobile devices and uses Fetch API + Blob for proper PDF downloads
+    // NOTE: Disabled mobile-specific handler as it causes session issues
+    // Mobile now uses same method as desktop (which works perfectly)
     const pdfDownloadBtn = document.getElementById('pdf-download-btn');
     
     if (pdfDownloadBtn) {
         // Detect if user is on mobile device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        // Temporarily disabled to use standard download for all devices
+        const isMobile = false; // /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         if (isMobile) {
             pdfDownloadBtn.addEventListener('click', function(e) {
