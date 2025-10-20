@@ -460,6 +460,16 @@ public function showProphecy(Request $request, $id)
      */
     public function directDownloadPdf(Request $request, $id)
     {
+        // CRITICAL: Clear all output buffers and suppress errors for clean PDF output
+        @ini_set('display_errors', 0);
+        @ini_set('implicit_flush', 0);
+        @error_reporting(0);
+        
+        // Clear all output buffers
+        while (@ob_get_level()) {
+            @ob_end_clean();
+        }
+        
         if (!Auth::check()) {
             return redirect()->route('login');
         }
@@ -487,7 +497,6 @@ public function showProphecy(Request $request, $id)
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
             // For cloud storage: Stream with proper headers
-            // We need to stream because cloud URLs don't force download on mobile
             
             if (!\Storage::disk($pdfDisk)->exists($pdfFile)) {
                 abort(404, 'PDF not found');
@@ -496,15 +505,17 @@ public function showProphecy(Request $request, $id)
             // Get file from cloud storage
             $content = \Storage::disk($pdfDisk)->get($pdfFile);
             
-            // Return as downloadable file with proper headers
-            return response($content, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                'Content-Length' => strlen($content),
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache',
-                'Expires' => '0',
-            ]);
+            // CRITICAL: Use make() and explicit binary headers for mobile
+            return response()->make($content, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Content-Length', strlen($content))
+                ->header('Content-Transfer-Encoding', 'binary')
+                ->header('Accept-Ranges', 'bytes')
+                ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+                ->header('Pragma', 'public')
+                ->header('Expires', '0')
+                ->header('X-Content-Type-Options', 'nosniff');
         } else {
             // For local storage: Serve the file
             $pdfService = app(\App\Services\PdfStorageService::class);
