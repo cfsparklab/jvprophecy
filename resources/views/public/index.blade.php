@@ -166,19 +166,23 @@
                 @foreach($groupedByYear as $yearData)
                     <div id="year-{{ $yearData['year'] }}" class="year-content" style="display: {{ $yearData['year'] == $currentYear ? 'block' : 'none' }};">
                         
-                        <!-- Month Selector -->
+                        <!-- Month Tabs -->
                         <div style="text-align: center; margin-bottom: 2.5rem;">
-                            <select class="month-selector" 
-                                    data-year="{{ $yearData['year'] }}" 
-                                    onchange="showMonth('{{ $yearData['year'] }}', this.value)"
-                                    style="padding: 1rem 2rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; font-weight: 600; background: white; color: #475569; min-width: 300px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: pointer;">
-                                <option value="">Select a Month</option>
+                            <div style="display: inline-flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; background: white; padding: 0.75rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); max-width: 90%;">
                                 @foreach($yearData['months'] as $monthData)
-                                    <option value="{{ $monthData['month_key'] }}" {{ $monthData['month_key'] == $currentMonth ? 'selected' : '' }}>
-                                        {{ $monthData['month_short'] }} ({{ $monthData['prophecy_count'] }} {{ $monthData['prophecy_count'] == 1 ? 'prophecy' : 'prophecies' }})
-                                    </option>
+                                    <button type="button" 
+                                            class="month-tab {{ $monthData['month_key'] == $currentMonth ? 'active' : '' }}" 
+                                            data-month="{{ $monthData['month_key'] }}"
+                                            data-year="{{ $yearData['year'] }}"
+                                            style="padding: 0.875rem 1.75rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; {{ $monthData['month_key'] == $currentMonth ? 'background: #cd7f32; color: white;' : 'background: transparent; color: #64748b;' }}"
+                                            onclick="showMonth('{{ $yearData['year'] }}', '{{ $monthData['month_key'] }}', this)">
+                                        {{ $monthData['month_short'] }}
+                                        <span style="font-size: 0.75rem; opacity: 0.8; display: block; margin-top: 0.25rem;">
+                                            {{ $monthData['prophecy_count'] }} {{ $monthData['prophecy_count'] == 1 ? 'prophecy' : 'prophecies' }}
+                                        </span>
+                                    </button>
                                 @endforeach
-                            </select>
+                            </div>
                         </div>
 
                         <!-- Month Content Containers -->
@@ -415,10 +419,15 @@ body {
     outline-offset: 2px !important;
 }
 
-.month-selector:focus {
-    outline: 2px solid #456983 !important;
+/* Month Tab Styles */
+.month-tab:hover:not(.active) {
+    background: rgba(205, 127, 50, 0.1) !important;
+    color: #cd7f32 !important;
+}
+
+.month-tab:focus {
+    outline: 2px solid #cd7f32 !important;
     outline-offset: 2px !important;
-    border-color: #456983 !important;
 }
 
 /* Responsive Grid Layout */
@@ -436,8 +445,8 @@ body {
         font-size: 1rem !important;
     }
     
-    .month-selector {
-        min-width: 250px !important;
+    .month-tab {
+        padding: 0.75rem 1.5rem !important;
         font-size: 0.9rem !important;
     }
     
@@ -473,10 +482,13 @@ body {
         font-size: 0.9rem !important;
     }
     
-    .month-selector {
-        min-width: 200px !important;
+    .month-tab {
+        padding: 0.625rem 1.25rem !important;
         font-size: 0.85rem !important;
-        padding: 0.875rem 1.5rem !important;
+    }
+    
+    .month-tab span {
+        font-size: 0.65rem !important;
     }
     
     main .intel-container a[href*="prophecies"],
@@ -533,8 +545,8 @@ function showYear(year, element) {
     }
 }
 
-// Month dropdown switching
-function showMonth(year, monthKey) {
+// Month tab switching
+function showMonth(year, monthKey, element) {
     const yearContainer = document.getElementById('year-' + year);
     if (!yearContainer) return;
     
@@ -542,6 +554,20 @@ function showMonth(year, monthKey) {
     yearContainer.querySelectorAll('.month-content').forEach(content => {
         content.style.display = 'none';
     });
+    
+    // Update month tab styling
+    yearContainer.querySelectorAll('.month-tab').forEach(tab => {
+        tab.style.background = 'transparent';
+        tab.style.color = '#64748b';
+        tab.classList.remove('active');
+    });
+    
+    // Set active tab styling
+    if (element) {
+        element.style.background = '#cd7f32';
+        element.style.color = 'white';
+        element.classList.add('active');
+    }
     
     // Show selected month content
     if (monthKey) {
@@ -599,6 +625,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Year tab keyboard navigation
     document.querySelectorAll('.year-tab').forEach(tab => {
+        tab.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
+    
+    // Month tab keyboard navigation
+    document.querySelectorAll('.month-tab').forEach(tab => {
         tab.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
