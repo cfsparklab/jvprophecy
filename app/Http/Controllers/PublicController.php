@@ -323,6 +323,9 @@ public function showProphecy(Request $request, $id)
      */
     public function downloadUploadedProphecyPdf(Request $request, $id)
     {
+        // Disable error display for clean PDF output
+        ini_set('display_errors', 0);
+        
         // Check authentication
         if (!Auth::check()) {
             return response()->view('errors.auth-required', [
@@ -390,6 +393,11 @@ public function showProphecy(Request $request, $id)
             \Log::warning('Security logging failed: ' . $e->getMessage());
         }
 
+        // Clear any output buffers to prevent corruption
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
         // Generate clean filename
         $cleanTitle = preg_replace('/[^A-Za-z0-9\-_]/', '_', $prophecy->title);
         $filename = 'prophecy_' . $prophecy->id . '_' . $cleanTitle . '_' . $language . '.pdf';
@@ -399,7 +407,7 @@ public function showProphecy(Request $request, $id)
         $disposition = $action === 'view' ? 'inline' : 'attachment';
 
         // Check if we're using cloud storage
-        $pdfDisk = env('PDF_STORAGE_DISK', 'r2');
+        $pdfDisk = env('PDF_STORAGE_DISK', 'public');
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
             // For cloud storage, get content and stream
@@ -413,10 +421,11 @@ public function showProphecy(Request $request, $id)
                 ], 404);
             }
             
-            return response($content, 200, [
+            return response()->make($content, 200, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
-                'Content-Description' => 'File Transfer',
+                'Content-Length' => strlen($content),
+                'Accept-Ranges' => 'bytes',
                 'Cache-Control' => 'public, max-age=3600',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
@@ -432,13 +441,16 @@ public function showProphecy(Request $request, $id)
                 ], 404);
             }
             
-            return response()->file($pdfPath, [
+            // Use BinaryFileResponse for better handling
+            $response = response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
-                'Content-Description' => 'File Transfer',
+                'Accept-Ranges' => 'bytes',
                 'Cache-Control' => 'public, max-age=3600',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
+            
+            return $response;
         }
     }
 
