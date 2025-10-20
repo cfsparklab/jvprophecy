@@ -1,0 +1,107 @@
+=====================================================
+🚨 URGENT: FIX 404 ERROR - RUN THESE COMMANDS
+=====================================================
+
+The 404 error is because your server needs to refresh its routes.
+
+-----------------------------------------------------
+OPTION 1: Run the Script (Easiest)
+-----------------------------------------------------
+
+1. Upload deploy-fix.sh to your server
+2. Make it executable:
+   chmod +x deploy-fix.sh
+3. Run it:
+   ./deploy-fix.sh
+
+-----------------------------------------------------
+OPTION 2: Run Commands Manually
+-----------------------------------------------------
+
+SSH into your server and run these commands:
+
+cd /var/www/html
+
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+php artisan route:cache
+
+sudo systemctl restart php-fpm
+sudo systemctl restart nginx
+
+-----------------------------------------------------
+OPTION 3: Via cPanel or Hosting Panel
+-----------------------------------------------------
+
+If you use cPanel/Plesk, use Terminal and run:
+
+cd /var/www/html
+php artisan route:clear
+php artisan cache:clear
+php artisan route:cache
+
+-----------------------------------------------------
+WHY THIS IS NEEDED
+-----------------------------------------------------
+
+Laravel caches routes for performance. When you add new
+routes (like /direct-download), you must clear the cache
+so Laravel knows about them.
+
+Without clearing the cache:
+❌ New routes = 404 error
+❌ Updated controllers = old code runs
+
+After clearing the cache:
+✅ New routes work
+✅ Everything up to date
+
+-----------------------------------------------------
+TEST AFTER DEPLOYMENT
+-----------------------------------------------------
+
+1. Desktop Browser:
+   https://jvprophecy.vincentselvakumar.org/prophecies/20?language=ta
+   Click "Download PDF" - should download as .pdf
+
+2. Mobile Browser:
+   Same URL
+   Click "Download PDF" - should download as .pdf (NOT .pdf.html)
+
+3. PDF Viewer:
+   Click Tamil image → Opens PDF viewer
+   Click "Download" button → Downloads as .pdf
+
+-----------------------------------------------------
+WHAT IF IT STILL DOESN'T WORK?
+-----------------------------------------------------
+
+If you still get 404 after clearing cache:
+
+1. Check file permissions:
+   chmod -R 755 /var/www/html/app/Http/Controllers
+   chmod -R 755 /var/www/html/routes
+
+2. Check if files are uploaded:
+   ls -la /var/www/html/app/Http/Controllers/PublicController.php
+   (Should show the file exists)
+
+3. Check Laravel logs:
+   tail -f /var/www/html/storage/logs/laravel.log
+
+4. Verify PHP-FPM is running:
+   sudo systemctl status php-fpm
+
+-----------------------------------------------------
+NEED HELP?
+-----------------------------------------------------
+
+If none of this works, send me:
+1. Output of: php artisan route:list | grep direct-download
+2. Output of: tail -20 storage/logs/laravel.log
+3. Your PHP version: php -v
+
+=====================================================
+
