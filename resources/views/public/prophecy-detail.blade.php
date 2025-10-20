@@ -93,11 +93,6 @@ use Illuminate\Support\Facades\Storage;
                         <span style="font-size: 0.9rem; font-weight: 600; color: #475569;">Week {{ $prophecy->week_number }}</span>
                     </div>
                     @endif
-                    
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
-                        <i class="fas fa-eye" style="color: #64748b; font-size: 1rem;"></i>
-                        <span style="font-size: 0.875rem; color: #64748b;">{{ number_format($prophecy->view_count) }} views</span>
-                    </div>
                 </div>
                 
                 <!-- Title -->
