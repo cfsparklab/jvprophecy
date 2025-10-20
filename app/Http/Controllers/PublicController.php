@@ -455,6 +455,46 @@ public function showProphecy(Request $request, $id)
     }
 
     /**
+     * Simple, direct PDF download (for mobile compatibility)
+     */
+    public function directDownloadPdf(Request $request, $id)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $language = $request->language ?? 'en';
+        $prophecy = Prophecy::findOrFail($id);
+        
+        // Get PDF file path
+        if ($language === 'en') {
+            $pdfFile = $prophecy->pdf_file;
+        } else {
+            $translation = $prophecy->translations()->where('language', $language)->first();
+            $pdfFile = $translation ? $translation->pdf_file : null;
+        }
+
+        if (!$pdfFile) {
+            abort(404, 'PDF not found');
+        }
+
+        // Get full path
+        $pdfPath = storage_path('app/public/' . $pdfFile);
+        
+        if (!file_exists($pdfPath)) {
+            abort(404, 'PDF file not found');
+        }
+
+        // Simple filename
+        $filename = 'prophecy_' . $prophecy->id . '_' . $language . '.pdf';
+
+        // Direct file download using Laravel's download helper
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
      * View PDF in web-based viewer (PDF.js)
      */
     public function viewPdfInBrowser(Request $request, $id)
@@ -486,10 +526,10 @@ public function showProphecy(Request $request, $id)
             'action' => 'view'  // View action for streaming
         ]);
         
-        $downloadUrl = route('prophecies.download.pdf', [
+        // Use simple direct download for reliability
+        $downloadUrl = route('prophecies.direct.download', [
             'id' => $id,
-            'language' => $language,
-            'action' => 'download'  // Download action
+            'language' => $language
         ]);
         
         return view('public.pdf-viewer', compact('title', 'pdfUrl', 'downloadUrl'));

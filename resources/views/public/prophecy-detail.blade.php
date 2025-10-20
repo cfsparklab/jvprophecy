@@ -97,17 +97,19 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         if ($langCode === 'en') {
                             if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
                                 $hasPdf = true;
-                                // Use PDF viewer route for better compatibility
+                                // Use PDF viewer route for viewing
                                 $viewUrl = route('prophecies.view.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
-                                $downloadUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode, 'action' => 'download']);
+                                // Use simple direct download route
+                                $downloadUrl = route('prophecies.direct.download', ['id' => $prophecy->id, 'language' => $langCode]);
                             }
                         } else {
                             $translation = $prophecy->translations->where('language', $langCode)->first();
                             if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
                                 $hasPdf = true;
-                                // Use PDF viewer route for better compatibility
+                                // Use PDF viewer route for viewing
                                 $viewUrl = route('prophecies.view.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
-                                $downloadUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode, 'action' => 'download']);
+                                // Use simple direct download route
+                                $downloadUrl = route('prophecies.direct.download', ['id' => $prophecy->id, 'language' => $langCode]);
                             }
                             // Use translation image if available
                             if ($translation && $translation->featured_image) {

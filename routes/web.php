@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth.download'])->group(function () {
     Route::get('/prophecies/{id}/download', [PublicController::class, 'downloadProphecy'])->name('prophecies.download');
     Route::get('/prophecies/{id}/download-pdf', [PublicController::class, 'downloadUploadedProphecyPdf'])->name('prophecies.download.pdf');
+    Route::get('/prophecies/{id}/direct-download', [PublicController::class, 'directDownloadPdf'])->name('prophecies.direct.download');
     Route::get('/prophecies/{id}/view-pdf', [PublicController::class, 'viewPdfInBrowser'])->name('prophecies.view.pdf');
     Route::get('/prophecies/{id}/print', [PublicController::class, 'printProphecy'])->name('prophecies.print');
 });
