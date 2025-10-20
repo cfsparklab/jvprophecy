@@ -465,6 +465,7 @@ public function showProphecy(Request $request, $id)
 
         $language = $request->language ?? 'en';
         $prophecy = Prophecy::findOrFail($id);
+        $pdfService = app(\App\Services\PdfStorageService::class);
         
         // Get PDF file path
         if ($language === 'en') {
@@ -474,24 +475,42 @@ public function showProphecy(Request $request, $id)
             $pdfFile = $translation ? $translation->pdf_file : null;
         }
 
-        if (!$pdfFile) {
+        if (!$pdfFile || !$pdfService->pdfExists($pdfFile)) {
             abort(404, 'PDF not found');
-        }
-
-        // Get full path
-        $pdfPath = storage_path('app/public/' . $pdfFile);
-        
-        if (!file_exists($pdfPath)) {
-            abort(404, 'PDF file not found');
         }
 
         // Simple filename
         $filename = 'prophecy_' . $prophecy->id . '_' . $language . '.pdf';
 
-        // Direct file download using Laravel's download helper
-        return response()->download($pdfPath, $filename, [
-            'Content-Type' => 'application/pdf',
-        ]);
+        // Check storage disk
+        $pdfDisk = env('PDF_STORAGE_DISK', 'public');
+        
+        if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
+            // For cloud storage, get content and stream
+            $content = $pdfService->getPdfContent($pdfFile);
+            
+            if (!$content) {
+                abort(404, 'PDF could not be retrieved');
+            }
+            
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Length' => strlen($content),
+                'Cache-Control' => 'public, max-age=3600',
+            ]);
+        } else {
+            // For local storage
+            $pdfPath = $pdfService->getPdfPath($pdfFile);
+            
+            if (!$pdfPath || !file_exists($pdfPath)) {
+                abort(404, 'PDF file not found');
+            }
+            
+            return response()->download($pdfPath, $filename, [
+                'Content-Type' => 'application/pdf',
+            ]);
+        }
     }
 
     /**
