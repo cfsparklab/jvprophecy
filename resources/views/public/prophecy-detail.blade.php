@@ -155,11 +155,13 @@ use Illuminate\Support\Facades\Storage;
                         
                         @if($hasPdf)
                             <a href="{{ route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $language]) }}" 
+                               id="pdf-download-btn"
+                               class="pdf-download-link"
                                style="background: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;" 
                                onmouseover="this.style.background='#059669'" 
                                onmouseout="this.style.background='#10b981'">
                                 <i class="fas fa-file-pdf"></i>
-                                Download PDF
+                                <span id="download-text">Download PDF</span>
                             </a>
                         @else
                             <div style="background: #f3f4f6; color: #6b7280; padding: 12px 24px; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
@@ -783,6 +785,96 @@ document.addEventListener('DOMContentLoaded', function() {
         }).catch(function(error) {
             console.log('View count increment failed:', error);
         });
+    }
+    
+    // Mobile PDF Download Handler
+    // Detects mobile devices and uses Fetch API + Blob for proper PDF downloads
+    const pdfDownloadBtn = document.getElementById('pdf-download-btn');
+    
+    if (pdfDownloadBtn) {
+        // Detect if user is on mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            pdfDownloadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const url = this.href;
+                const downloadText = document.getElementById('download-text');
+                const originalText = downloadText.textContent;
+                
+                // Show loading state
+                downloadText.textContent = 'Downloading...';
+                this.style.opacity = '0.7';
+                this.style.pointerEvents = 'none';
+                
+                // Fetch PDF as blob
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/pdf',
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Download failed');
+                    }
+                    
+                    // Check content type
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/pdf')) {
+                        throw new Error('Invalid file type: ' + contentType);
+                    }
+                    
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create blob URL
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    
+                    // Extract filename from URL or use default
+                    const filename = 'prophecy_{{ $prophecy->id }}_{{ $language }}.pdf';
+                    
+                    // Create temporary link and trigger download
+                    const tempLink = document.createElement('a');
+                    tempLink.href = blobUrl;
+                    tempLink.download = filename;
+                    tempLink.style.display = 'none';
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    document.body.removeChild(tempLink);
+                    
+                    // Clean up blob URL
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(blobUrl);
+                    }, 100);
+                    
+                    // Reset button state
+                    downloadText.textContent = 'Download Complete! ✓';
+                    setTimeout(() => {
+                        downloadText.textContent = originalText;
+                        pdfDownloadBtn.style.opacity = '1';
+                        pdfDownloadBtn.style.pointerEvents = 'auto';
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error('PDF download failed:', error);
+                    downloadText.textContent = 'Download Failed - Try Again';
+                    alert('Failed to download PDF. Please check your internet connection and try again.');
+                    
+                    setTimeout(() => {
+                        downloadText.textContent = originalText;
+                        pdfDownloadBtn.style.opacity = '1';
+                        pdfDownloadBtn.style.pointerEvents = 'auto';
+                    }, 3000);
+                });
+            });
+            
+            console.log('Mobile PDF download handler activated');
+        } else {
+            console.log('Desktop detected - using standard download');
+        }
     }
 });
 </script>
