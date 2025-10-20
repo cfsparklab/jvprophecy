@@ -153,13 +153,13 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         
                         <!-- Download PDF Button -->
                         @if($hasPdf)
-                            <button onclick="downloadPDF('{{ $downloadUrl }}', 'prophecy_{{ $prophecy->id }}_{{ $langCode }}.pdf')"
-                               style="display: inline-flex; align-items: center; gap: 0.75rem; background: #2d3748; color: white; padding: 1rem 2.5rem; border-radius: 50px; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);"
+                            <a href="{{ $downloadUrl }}" download
+                               style="display: inline-flex; align-items: center; gap: 0.75rem; background: #2d3748; color: white; padding: 1rem 2.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);"
                                onmouseover="this.style.background='#1a202c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(45, 55, 72, 0.4)';"
                                onmouseout="this.style.background='#2d3748'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(45, 55, 72, 0.3)';">
-                                <span id="download-text-{{ $langCode }}">Download PDF</span>
-                                <i class="fas fa-download" id="download-icon-{{ $langCode }}"></i>
-                            </button>
+                                <span>Download PDF</span>
+                                <i class="fas fa-download"></i>
+                            </a>
                         @else
                             <div style="display: inline-flex; align-items: center; gap: 0.75rem; background: #cbd5e1; color: #64748b; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: not-allowed; opacity: 0.6;">
                                 <span>PDF Coming Soon</span>
@@ -241,82 +241,3 @@ $pdfService = app(\App\Services\PdfStorageService::class);
 }
 </style>
 @endsection
-
-@push('scripts')
-<script>
-/**
- * Download PDF with proper handling for mobile devices
- */
-async function downloadPDF(url, filename) {
-    // Get the language code from filename
-    const langMatch = filename.match(/_([a-z]{2})\.pdf$/);
-    const langCode = langMatch ? langMatch[1] : 'en';
-    
-    // Get elements
-    const textElement = document.getElementById(`download-text-${langCode}`);
-    const iconElement = document.getElementById(`download-icon-${langCode}`);
-    
-    // Show loading state
-    if (textElement) textElement.textContent = 'Downloading...';
-    if (iconElement) iconElement.className = 'fas fa-spinner fa-spin';
-    
-    try {
-        // Fetch the PDF
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/pdf',
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Download failed');
-        }
-        
-        // Check if response is actually a PDF
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/pdf')) {
-            throw new Error('Invalid file type received');
-        }
-        
-        // Get the PDF as blob
-        const blob = await response.blob();
-        
-        // Create download link
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = downloadUrl;
-        a.download = filename;
-        
-        // Trigger download
-        document.body.appendChild(a);
-        a.click();
-        
-        // Cleanup
-        setTimeout(() => {
-            window.URL.revokeObjectURL(downloadUrl);
-            document.body.removeChild(a);
-        }, 100);
-        
-        // Reset button state
-        if (textElement) textElement.textContent = 'Download PDF';
-        if (iconElement) iconElement.className = 'fas fa-download';
-        
-    } catch (error) {
-        console.error('Download error:', error);
-        
-        // Reset button state
-        if (textElement) textElement.textContent = 'Download PDF';
-        if (iconElement) iconElement.className = 'fas fa-download';
-        
-        // Show error message
-        alert('Download failed. Please try again or use the "View PDF" option and download from there.');
-        
-        // Fallback: try opening in new window
-        window.open(url, '_blank');
-    }
-}
-</script>
-@endpush
