@@ -14,6 +14,7 @@ class Prophecy extends Model
         'title',
         'description',
         'jebikalam_vanga_date',
+        'week_number',
         'category_id',
         'created_by',
         'status',

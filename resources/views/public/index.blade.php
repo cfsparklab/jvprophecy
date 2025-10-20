@@ -140,58 +140,96 @@
         <div class="intel-container" style="max-width: 1200px;">
             
             <!-- Page Title -->
-            <div style="text-align: center; margin-bottom: 3rem;">
+            <div style="text-align: center; margin-bottom: 2rem;">
                 <h2 style="font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: -0.5px;">
                     Select Jebikalaam Vanga Prophecy
                 </h2>
             </div>
 
-            @if(count($groupedDates) > 0)
-                <!-- Grid Container -->
-                <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 900px; margin: 0 auto;">
-                    @foreach($groupedDates as $monthData)
-                        <!-- Month Row -->
-                        <div style="display: grid; grid-template-columns: 310px 1fr; gap: 1.5rem; align-items: start;">
-                            <!-- Month Card (Left) -->
-                            <div style="background: #456983; color: white; padding: 2rem 1.5rem; border-radius: 12px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <h3 style="font-size: 1.5rem; font-weight: 600; margin: 0; letter-spacing: -0.3px;">
-                                    {{ $monthData['month_name'] }}
-                                </h3>
-                            </div>
-                            
-                            <!-- Week Cards (Right) -->
-                            <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
-                                @foreach($monthData['dates'] as $dateInfo)
-                                    @auth
-                                        <a href="{{ route('prophecies.show', ['id' => $dateInfo['prophecy_id'], 'language' => auth()->user()->preferred_language ?? 'en']) }}" 
-                                           style="background: #cd7f32; color: white; padding: 1.25rem 1.5rem; border-radius: 12px; text-decoration: none; min-width: 160px; text-align: center; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                                           onmouseover="this.style.background='#b36b28'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
-                                           onmouseout="this.style.background='#cd7f32'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                                            <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
-                                                Week {{ $loop->iteration }}
-                                            </div>
-                                            <div style="font-size: 1rem; font-weight: 500;">
-                                                {{ \Carbon\Carbon::parse($dateInfo['jebikalam_vanga_date'])->format('jS M') }}
-                                            </div>
-                                        </a>
-                                    @else
-                                        <div style="background: #9ca3af; color: white; padding: 1.25rem 1.5rem; border-radius: 12px; min-width: 160px; text-align: center; opacity: 0.6; cursor: not-allowed; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                            <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
-                                                Week {{ $loop->iteration }}
-                                            </div>
-                                            <div style="font-size: 1rem; font-weight: 500;">
-                                                {{ \Carbon\Carbon::parse($dateInfo['jebikalam_vanga_date'])->format('jS M') }}
-                                            </div>
-                                            <div style="font-size: 0.65rem; margin-top: 0.5rem; opacity: 0.8;">
-                                                <i class="fas fa-lock" style="margin-right: 0.25rem;"></i>Login Required
-                                            </div>
-                                        </div>
-                                    @endauth
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
+            @if(count($groupedByYear) > 0)
+                <!-- Year Tabs -->
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <div style="display: inline-flex; gap: 0.75rem; background: white; padding: 0.5rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+                        @foreach($groupedByYear as $yearData)
+                            <button type="button" 
+                                    class="year-tab {{ $yearData['year'] == $currentYear ? 'active' : '' }}" 
+                                    data-year="{{ $yearData['year'] }}"
+                                    style="padding: 0.75rem 2rem; border: none; border-radius: 8px; font-size: 1.125rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; {{ $yearData['year'] == $currentYear ? 'background: #456983; color: white;' : 'background: transparent; color: #64748b;' }}"
+                                    onclick="showYear('{{ $yearData['year'] }}', this)">
+                                {{ $yearData['year'] }}
+                            </button>
+                        @endforeach
+                    </div>
                 </div>
+
+                <!-- Year Content Containers -->
+                @foreach($groupedByYear as $yearData)
+                    <div id="year-{{ $yearData['year'] }}" class="year-content" style="display: {{ $yearData['year'] == $currentYear ? 'block' : 'none' }};">
+                        
+                        <!-- Month Selector -->
+                        <div style="text-align: center; margin-bottom: 2.5rem;">
+                            <select class="month-selector" 
+                                    data-year="{{ $yearData['year'] }}" 
+                                    onchange="showMonth('{{ $yearData['year'] }}', this.value)"
+                                    style="padding: 1rem 2rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; font-weight: 600; background: white; color: #475569; min-width: 300px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: pointer;">
+                                <option value="">Select a Month</option>
+                                @foreach($yearData['months'] as $monthData)
+                                    <option value="{{ $monthData['month_key'] }}" {{ $monthData['month_key'] == $currentMonth ? 'selected' : '' }}>
+                                        {{ $monthData['month_short'] }} ({{ $monthData['prophecy_count'] }} {{ $monthData['prophecy_count'] == 1 ? 'prophecy' : 'prophecies' }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Month Content Containers -->
+                        @foreach($yearData['months'] as $monthData)
+                            <div id="month-{{ $monthData['month_key'] }}" class="month-content" style="display: {{ $monthData['month_key'] == $currentMonth ? 'block' : 'none' }}; max-width: 900px; margin: 0 auto;">
+                                
+                                <!-- Month Row -->
+                                <div style="display: grid; grid-template-columns: 310px 1fr; gap: 1.5rem; align-items: start;">
+                                    <!-- Month Card (Left) -->
+                                    <div style="background: #456983; color: white; padding: 2rem 1.5rem; border-radius: 12px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                        <h3 style="font-size: 1.5rem; font-weight: 600; margin: 0; letter-spacing: -0.3px;">
+                                            {{ $monthData['month_short'] }} {{ $monthData['year'] }}
+                                        </h3>
+                                    </div>
+                                    
+                                    <!-- Week Cards (Right) -->
+                                    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                                        @foreach($monthData['dates'] as $dateInfo)
+                                            @auth
+                                                <a href="{{ route('prophecies.show', ['id' => $dateInfo['prophecy_id'], 'language' => auth()->user()->preferred_language ?? 'en']) }}" 
+                                                   style="background: #cd7f32; color: white; padding: 1.25rem 1.5rem; border-radius: 12px; text-decoration: none; min-width: 160px; text-align: center; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                                                   onmouseover="this.style.background='#b36b28'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+                                                   onmouseout="this.style.background='#cd7f32'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                                                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
+                                                        Week {{ $dateInfo['week_number'] ?: $loop->iteration }}
+                                                    </div>
+                                                    <div style="font-size: 1rem; font-weight: 500;">
+                                                        {{ \Carbon\Carbon::parse($dateInfo['jebikalam_vanga_date'])->format('jS M') }}
+                                                    </div>
+                                                </a>
+                                            @else
+                                                <div style="background: #9ca3af; color: white; padding: 1.25rem 1.5rem; border-radius: 12px; min-width: 160px; text-align: center; opacity: 0.6; cursor: not-allowed; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
+                                                        Week {{ $dateInfo['week_number'] ?: $loop->iteration }}
+                                                    </div>
+                                                    <div style="font-size: 1rem; font-weight: 500;">
+                                                        {{ \Carbon\Carbon::parse($dateInfo['jebikalam_vanga_date'])->format('jS M') }}
+                                                    </div>
+                                                    <div style="font-size: 0.65rem; margin-top: 0.5rem; opacity: 0.8;">
+                                                        <i class="fas fa-lock" style="margin-right: 0.25rem;"></i>Login Required
+                                                    </div>
+                                                </div>
+                                            @endauth
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+
+                    </div>
+                @endforeach
             @else
                 <!-- Empty State -->
                 <div style="text-align: center; padding: 4rem 2rem;">
@@ -366,6 +404,23 @@ body {
     background: linear-gradient(135deg, #1d4ed8, #1e40af);
 }
 
+/* Year Tab Styles */
+.year-tab:hover:not(.active) {
+    background: rgba(69, 105, 131, 0.1) !important;
+    color: #456983 !important;
+}
+
+.year-tab:focus {
+    outline: 2px solid #456983 !important;
+    outline-offset: 2px !important;
+}
+
+.month-selector:focus {
+    outline: 2px solid #456983 !important;
+    outline-offset: 2px !important;
+    border-color: #456983 !important;
+}
+
 /* Responsive Grid Layout */
 @media (max-width: 768px) {
     main .intel-container > div:first-child {
@@ -374,6 +429,16 @@ body {
     
     main .intel-container > div:first-child h2 {
         font-size: 1.75rem !important;
+    }
+    
+    .year-tab {
+        padding: 0.625rem 1.5rem !important;
+        font-size: 1rem !important;
+    }
+    
+    .month-selector {
+        min-width: 250px !important;
+        font-size: 0.9rem !important;
     }
     
     main .intel-container > div[style*="display: grid"] > div {
@@ -403,6 +468,17 @@ body {
         padding: 0 0.5rem;
     }
     
+    .year-tab {
+        padding: 0.5rem 1.25rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .month-selector {
+        min-width: 200px !important;
+        font-size: 0.85rem !important;
+        padding: 0.875rem 1.5rem !important;
+    }
+    
     main .intel-container a[href*="prophecies"],
     main .intel-container > div[style*="display: grid"] > div > div:last-child > div {
         min-width: 120px !important;
@@ -415,6 +491,75 @@ body {
 
 @push('scripts')
 <script>
+// Year tab switching
+function showYear(year, element) {
+    // Hide all year contents
+    document.querySelectorAll('.year-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    // Show selected year content
+    const selectedYear = document.getElementById('year-' + year);
+    if (selectedYear) {
+        selectedYear.style.display = 'block';
+    }
+    
+    // Update active tab styling
+    document.querySelectorAll('.year-tab').forEach(tab => {
+        tab.style.background = 'transparent';
+        tab.style.color = '#64748b';
+        tab.classList.remove('active');
+    });
+    
+    element.style.background = '#456983';
+    element.style.color = 'white';
+    element.classList.add('active');
+    
+    // Reset month selector for the selected year
+    const monthSelector = selectedYear.querySelector('.month-selector');
+    if (monthSelector) {
+        // Hide all months first
+        selectedYear.querySelectorAll('.month-content').forEach(month => {
+            month.style.display = 'none';
+        });
+        
+        // Show the selected month if any
+        if (monthSelector.value) {
+            const selectedMonth = document.getElementById('month-' + monthSelector.value);
+            if (selectedMonth) {
+                selectedMonth.style.display = 'block';
+            }
+        }
+    }
+}
+
+// Month dropdown switching
+function showMonth(year, monthKey) {
+    const yearContainer = document.getElementById('year-' + year);
+    if (!yearContainer) return;
+    
+    // Hide all month contents in this year
+    yearContainer.querySelectorAll('.month-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    // Show selected month content
+    if (monthKey) {
+        const selectedMonth = document.getElementById('month-' + monthKey);
+        if (selectedMonth) {
+            selectedMonth.style.display = 'block';
+            
+            // Smooth scroll to the month content
+            setTimeout(() => {
+                selectedMonth.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+            }, 100);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Add subtle fade-in animation to cards on page load
     const cards = document.querySelectorAll('a[href*="prophecies"]');
@@ -449,6 +594,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         card.addEventListener('blur', function() {
             this.style.outline = 'none';
+        });
+    });
+    
+    // Year tab keyboard navigation
+    document.querySelectorAll('.year-tab').forEach(tab => {
+        tab.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
         });
     });
 });

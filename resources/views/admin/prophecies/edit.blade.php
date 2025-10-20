@@ -71,6 +71,25 @@
                         @enderror
                     </div>
                     
+                    <!-- Week Number -->
+                    <div class="intel-form-group">
+                        <label for="week_number" class="intel-form-label">
+                            Week Number <span style="color: var(--error-color);">*</span>
+                        </label>
+                        <input type="number" 
+                               id="week_number" 
+                               name="week_number" 
+                               required
+                               min="1"
+                               value="{{ old('week_number', $prophecy->week_number) }}"
+                               class="intel-form-input @error('week_number') error @enderror"
+                               placeholder="Enter week number (e.g., 1, 2, 3...)">
+                        @error('week_number')
+                        <p class="intel-form-error">{{ $message }}</p>
+                        @enderror
+                        <p class="intel-form-help">Continuous week number across all prophecies (1st prophecy = Week 1, 2nd = Week 2, etc.)</p>
+                    </div>
+                    
                     <!-- Category -->
                     <div class="intel-form-group">
                         <label for="category_id" class="intel-form-label">Category</label>

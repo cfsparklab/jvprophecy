@@ -23,10 +23,10 @@ class PublicController extends Controller
     public function index()
     {
         try {
-            // Get available prophecy dates grouped by month
+            // Get available prophecy dates grouped by year and month
             $prophecies = Prophecy::published()
                 ->public()
-                ->select('id', 'jebikalam_vanga_date')
+                ->select('id', 'jebikalam_vanga_date', 'week_number')
                 ->with(['translations' => function($query) {
                     $query->select('prophecy_id', 'language');
                 }])
@@ -37,41 +37,58 @@ class PublicController extends Controller
                     return $prophecy->jebikalam_vanga_date !== null;
                 });
 
-            // Group prophecies by month-year
-            $groupedDates = $prophecies->groupBy(function($prophecy) {
-                return $prophecy->jebikalam_vanga_date->format('Y-m');
-            })->map(function($monthProphecies, $monthKey) {
-                $firstDate = $monthProphecies->first()->jebikalam_vanga_date;
+            // Group prophecies by year, then by month
+            $groupedByYear = $prophecies->groupBy(function($prophecy) {
+                return $prophecy->jebikalam_vanga_date->format('Y');
+            })->map(function($yearProphecies, $year) {
+                $groupedByMonth = $yearProphecies->groupBy(function($prophecy) {
+                    return $prophecy->jebikalam_vanga_date->format('Y-m');
+                })->map(function($monthProphecies, $monthKey) {
+                    $firstDate = $monthProphecies->first()->jebikalam_vanga_date;
+                    
+                    return [
+                        'month_key' => $monthKey,
+                        'month_name' => $firstDate->format('F Y'),
+                        'month_short' => $firstDate->format('F'),
+                        'year' => $firstDate->format('Y'),
+                        'prophecy_count' => $monthProphecies->count(),
+                        'dates' => $monthProphecies->map(function($prophecy) {
+                            $availableLanguages = $prophecy->translations->pluck('language')->toArray();
+                            
+                            return [
+                                'prophecy_id' => $prophecy->id,
+                                'jebikalam_vanga_date' => $prophecy->jebikalam_vanga_date->format('Y-m-d'),
+                                'formatted_date' => $prophecy->jebikalam_vanga_date->format('d/m/Y'),
+                                'week_number' => $prophecy->week_number ?? 0,
+                                'available_languages' => $availableLanguages ?: ['en'],
+                            ];
+                        })->values()
+                    ];
+                });
                 
                 return [
-                    'month_key' => $monthKey,
-                    'month_name' => $firstDate->format('F Y'),
-                    'prophecy_count' => $monthProphecies->count(),
-                    'dates' => $monthProphecies->map(function($prophecy) {
-                        $availableLanguages = $prophecy->translations->pluck('language')->toArray();
-                        
-                        return [
-                            'prophecy_id' => $prophecy->id,
-                            'jebikalam_vanga_date' => $prophecy->jebikalam_vanga_date->format('Y-m-d'),
-                            'formatted_date' => $prophecy->jebikalam_vanga_date->format('d/m/Y'),
-                            'available_languages' => $availableLanguages ?: ['en'],
-                            'prophecy_count' => 1
-                        ];
-                    })->values()
+                    'year' => $year,
+                    'months' => $groupedByMonth->values()
                 ];
-            });
+            })->values();
             
             $categories = Category::active()->root()->orderBy('sort_order')->get();
+            
+            // Get current year and month for default selection
+            $currentYear = now()->format('Y');
+            $currentMonth = now()->format('Y-m');
             
         } catch (\Exception $e) {
             // Log the error and provide fallback data
             \Log::error('Error loading home page data: ' . $e->getMessage());
             
-            $groupedDates = collect([]);
+            $groupedByYear = collect([]);
             $categories = collect([]);
+            $currentYear = now()->format('Y');
+            $currentMonth = now()->format('Y-m');
         }
         
-        return view('public.index', compact('categories', 'groupedDates'));
+        return view('public.index', compact('categories', 'groupedByYear', 'currentYear', 'currentMonth'));
     }
 
     /**
