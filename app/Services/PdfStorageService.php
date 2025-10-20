@@ -109,27 +109,48 @@ class PdfStorageService
 
     /**
      * Get PDF URL for downloading
+     * Returns authenticated route URL instead of direct storage URL
      */
     public function getPdfUrl(string $path): string
     {
-        $disk = $this->getPdfDisk();
-        
-        try {
-            if ($disk === 'r2' || $disk === 's3') {
-                // For cloud storage, return the public URL
-                return Storage::disk($disk)->url($path);
-            } else {
-                // For local storage, return the local URL
-                return Storage::disk('public')->url($path);
-            }
-        } catch (\Exception $e) {
-            Log::error('Failed to get PDF URL', [
-                'disk' => $disk,
-                'path' => $path,
-                'error' => $e->getMessage()
+        // Extract prophecy ID and language from path
+        // Path format: prophecy_pdfs/prophecy_20_ta_1760886120.pdf
+        if (preg_match('/prophecy_(\d+)_([a-z]{2})_/', $path, $matches)) {
+            $prophecyId = $matches[1];
+            $language = $matches[2];
+            
+            // Return route URL that will be proxied through the application
+            return route('prophecies.download.pdf', [
+                'id' => $prophecyId,
+                'language' => $language
             ]);
-            return '';
         }
+        
+        // Fallback for main English PDFs (prophecy_main_*.pdf)
+        if (preg_match('/prophecy_main_(\d+)_/', $path, $matches)) {
+            $prophecyId = $matches[1];
+            
+            return route('prophecies.download.pdf', [
+                'id' => $prophecyId,
+                'language' => 'en'
+            ]);
+        }
+        
+        // If we can't parse the ID, log error and return empty
+        Log::error('Could not parse prophecy ID from PDF path', ['path' => $path]);
+        return '';
+    }
+    
+    /**
+     * Get PDF URL for a specific prophecy and language
+     * Preferred method - more explicit
+     */
+    public function getPdfUrlForProphecy(int $prophecyId, string $language = 'en'): string
+    {
+        return route('prophecies.download.pdf', [
+            'id' => $prophecyId,
+            'language' => $language
+        ]);
     }
 
     /**

@@ -96,13 +96,15 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         if ($langCode === 'en') {
                             if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
                                 $hasPdf = true;
-                                $pdfUrl = $pdfService->getPdfUrl($prophecy->pdf_file);
+                                // Use route-based URL for white-labeled, authenticated access
+                                $pdfUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
                             }
                         } else {
                             $translation = $prophecy->translations->where('language', $langCode)->first();
                             if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
                                 $hasPdf = true;
-                                $pdfUrl = $pdfService->getPdfUrl($translation->pdf_file);
+                                // Use route-based URL for white-labeled, authenticated access
+                                $pdfUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
                             }
                             // Use translation image if available
                             if ($translation && $translation->featured_image) {
