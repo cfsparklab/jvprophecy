@@ -456,7 +456,7 @@ public function showProphecy(Request $request, $id)
 
     /**
      * Simple, direct PDF download (for mobile compatibility)
-     * MOBILE FIX: Redirect directly to cloud storage URL to bypass Laravel processing
+     * Stream from cloud with proper Content-Disposition header for downloads
      */
     public function directDownloadPdf(Request $request, $id)
     {
@@ -479,19 +479,32 @@ public function showProphecy(Request $request, $id)
             abort(404, 'PDF not found');
         }
 
+        // Generate clean filename
+        $filename = 'prophecy_' . $prophecy->id . '_' . $language . '.pdf';
+
         // Check storage disk
         $pdfDisk = env('PDF_STORAGE_DISK', 'public');
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
-            // For cloud storage: Redirect directly to cloud URL
-            // This bypasses Laravel completely and lets the browser download directly
-            // Mobile browsers handle direct cloud URLs much better
-            $cloudUrl = \Storage::disk($pdfDisk)->url($pdfFile);
+            // For cloud storage: Stream with proper headers
+            // We need to stream because cloud URLs don't force download on mobile
             
-            // Add download parameter to force download instead of viewing
-            $cloudUrl .= (strpos($cloudUrl, '?') === false ? '?' : '&') . 'response-content-disposition=attachment';
+            if (!\Storage::disk($pdfDisk)->exists($pdfFile)) {
+                abort(404, 'PDF not found');
+            }
             
-            return redirect($cloudUrl);
+            // Get file from cloud storage
+            $content = \Storage::disk($pdfDisk)->get($pdfFile);
+            
+            // Return as downloadable file with proper headers
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Length' => strlen($content),
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]);
         } else {
             // For local storage: Serve the file
             $pdfService = app(\App\Services\PdfStorageService::class);
@@ -500,8 +513,6 @@ public function showProphecy(Request $request, $id)
             if (!$pdfPath || !file_exists($pdfPath)) {
                 abort(404, 'PDF file not found');
             }
-            
-            $filename = 'prophecy_' . $prophecy->id . '_' . $language . '.pdf';
             
             return response()->download($pdfPath, $filename, [
                 'Content-Type' => 'application/pdf',
