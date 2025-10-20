@@ -1,0 +1,159 @@
+=====================================================
+📦 FILES TO UPLOAD TO PRODUCTION SERVER
+=====================================================
+
+You need to upload these 3 files and run 2 commands.
+
+-----------------------------------------------------
+STEP 1: UPLOAD THESE FILES
+-----------------------------------------------------
+
+Upload these files to your production server:
+
+1. app/Http/Controllers/PublicController.php
+   → Location: /var/www/html/app/Http/Controllers/
+   
+2. routes/web.php
+   → Location: /var/www/html/routes/
+   
+3. resources/views/public/prophecy-detail.blade.php
+   → Location: /var/www/html/resources/views/public/
+
+-----------------------------------------------------
+HOW TO UPLOAD (Choose one method)
+-----------------------------------------------------
+
+METHOD A: Via FTP/SFTP (FileZilla, WinSCP, etc.)
+  1. Connect to your server
+  2. Navigate to /var/www/html/
+  3. Upload each file to its location
+  4. Overwrite existing files
+
+METHOD B: Via cPanel File Manager
+  1. Login to cPanel
+  2. Open File Manager
+  3. Navigate to /var/www/html/
+  4. Click Upload
+  5. Upload each file to its location
+
+METHOD C: Via SSH/SCP
+  scp app/Http/Controllers/PublicController.php user@server:/var/www/html/app/Http/Controllers/
+  scp routes/web.php user@server:/var/www/html/routes/
+  scp resources/views/public/prophecy-detail.blade.php user@server:/var/www/html/resources/views/public/
+
+METHOD D: Via Git Pull (if GitHub access is fixed)
+  cd /var/www/html
+  git pull origin main
+
+-----------------------------------------------------
+STEP 2: RUN THESE COMMANDS (CRITICAL!)
+-----------------------------------------------------
+
+After uploading, SSH into your server and run:
+
+cd /var/www/html
+
+# Clear route cache (THIS IS CRITICAL!)
+php artisan route:clear
+
+# Register new routes
+php artisan route:cache
+
+# Clear view cache
+php artisan view:clear
+
+# Restart PHP
+sudo systemctl restart php-fpm
+
+-----------------------------------------------------
+STEP 3: TEST
+-----------------------------------------------------
+
+Test on mobile browser:
+
+1. Visit: https://jvprophecy.vincentselvakumar.org/prophecies/19?language=ta
+
+2. Click "Download PDF" button
+
+3. Should download as: prophecy_19_ta.pdf ✅
+   (NOT: direct-download.htm ❌)
+
+-----------------------------------------------------
+WHAT CHANGED IN EACH FILE
+-----------------------------------------------------
+
+1. PublicController.php
+   ✅ Added directDownloadPdf() method
+   ✅ Uses Laravel's response()->download() 
+   ✅ Simple, mobile-friendly download
+
+2. web.php
+   ✅ Added route: /prophecies/{id}/direct-download
+
+3. prophecy-detail.blade.php
+   ✅ Uses new direct-download route
+   ✅ Removed 'download' attribute (better mobile support)
+   ✅ Let server headers handle the download
+
+-----------------------------------------------------
+WHY THE .htm ISSUE HAPPENED
+-----------------------------------------------------
+
+Before fix:
+- Route doesn't exist on server → 404
+- Browser tries to "download" 404 page
+- Creates file: direct-download.htm
+
+After fix:
+- Route exists → Returns actual PDF
+- Browser downloads: prophecy_19_ta.pdf ✅
+
+-----------------------------------------------------
+TROUBLESHOOTING
+-----------------------------------------------------
+
+If still getting 404:
+
+1. Verify files were uploaded:
+   ls -la /var/www/html/app/Http/Controllers/PublicController.php
+   ls -la /var/www/html/routes/web.php
+
+2. Check if route exists:
+   cd /var/www/html
+   php artisan route:list | grep direct-download
+   
+   Should show:
+   GET|HEAD  prophecies/{id}/direct-download
+
+3. Check Laravel logs:
+   tail -20 /var/www/html/storage/logs/laravel.log
+
+4. Check file permissions:
+   chmod -R 755 /var/www/html/app
+   chmod -R 755 /var/www/html/routes
+   chmod -R 755 /var/www/html/resources
+
+5. Clear ALL caches:
+   php artisan cache:clear
+   php artisan config:clear
+   php artisan route:clear
+   php artisan view:clear
+
+-----------------------------------------------------
+QUICK CHECKLIST
+-----------------------------------------------------
+
+□ Upload PublicController.php
+□ Upload web.php  
+□ Upload prophecy-detail.blade.php
+□ Run: php artisan route:clear
+□ Run: php artisan route:cache
+□ Run: php artisan view:clear
+□ Run: sudo systemctl restart php-fpm
+□ Test on mobile
+□ Verify downloads as .pdf (not .htm)
+
+=====================================================
+🎯 ONCE YOU DO THIS, IT WILL WORK!
+=====================================================
+

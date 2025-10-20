@@ -155,7 +155,7 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         
                         <!-- Download PDF Button -->
                         @if($hasPdf)
-                            <a href="{{ $downloadUrl }}" download
+                            <a href="{{ $downloadUrl }}"
                                style="display: inline-flex; align-items: center; gap: 0.75rem; background: #2d3748; color: white; padding: 1rem 2.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);"
                                onmouseover="this.style.background='#1a202c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(45, 55, 72, 0.4)';"
                                onmouseout="this.style.background='#2d3748'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(45, 55, 72, 0.3)';">
