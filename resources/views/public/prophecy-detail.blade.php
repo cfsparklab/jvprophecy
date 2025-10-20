@@ -813,23 +813,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/pdf',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     credentials: 'same-origin'
                 })
                 .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers.get('content-type'));
+                    
                     if (!response.ok) {
-                        throw new Error('Download failed');
+                        console.error('Response not OK:', response.status, response.statusText);
+                        throw new Error('Server error: ' + response.status);
                     }
                     
-                    // Check content type
+                    // Check content type - be more lenient
                     const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/pdf')) {
-                        throw new Error('Invalid file type: ' + contentType);
+                    console.log('Content-Type:', contentType);
+                    
+                    // Accept both application/pdf and application/octet-stream
+                    if (contentType && !contentType.includes('application/pdf') && !contentType.includes('application/octet-stream')) {
+                        console.error('Invalid content type:', contentType);
+                        // If it's HTML, user might not be logged in
+                        if (contentType.includes('text/html')) {
+                            throw new Error('Session expired. Please login again.');
+                        }
+                        throw new Error('Invalid file type received');
                     }
                     
                     return response.blob();
                 })
                 .then(blob => {
+                    console.log('Blob received:', blob.size, 'bytes, type:', blob.type);
                     // Create blob URL
                     const blobUrl = window.URL.createObjectURL(blob);
                     
@@ -860,8 +874,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('PDF download failed:', error);
-                    downloadText.textContent = 'Download Failed - Try Again';
-                    alert('Failed to download PDF. Please check your internet connection and try again.');
+                    downloadText.textContent = 'Download Failed';
+                    
+                    // Show specific error message
+                    let errorMsg = 'Failed to download PDF. ';
+                    if (error.message.includes('Session expired')) {
+                        errorMsg = 'Your session has expired. Please login again and try downloading.';
+                    } else if (error.message.includes('Server error')) {
+                        errorMsg = 'Server error occurred. Please try again in a moment.';
+                    } else if (error.message.includes('Invalid file')) {
+                        errorMsg = 'Invalid file received from server. Please contact support.';
+                    } else {
+                        errorMsg += 'Error: ' + error.message;
+                    }
+                    
+                    alert(errorMsg);
                     
                     setTimeout(() => {
                         downloadText.textContent = originalText;
