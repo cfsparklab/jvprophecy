@@ -43,7 +43,17 @@ class ProphecyController extends Controller
             'video_url' => 'nullable|url|max:500',
             'prayer_points_content' => 'nullable|string',
             'pdf_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
+            'featured_image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120', // 5MB max
         ]);
+
+        // Handle featured image upload
+        $imageData = [];
+        if ($request->hasFile('featured_image')) {
+            $file = $request->file('featured_image');
+            $filename = 'featured_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('prophecy_images', $filename, 'public');
+            $imageData = ['featured_image' => $path];
+        }
 
         // Handle PDF file upload
         $pdfData = [];
@@ -72,12 +82,16 @@ class ProphecyController extends Controller
             'video_url' => $request->video_url,
             'prayer_points' => $request->prayer_points_content,
             'published_at' => $request->status === 'published' ? now() : null,
-        ], $pdfData));
+            'week_number' => $request->week_number,
+        ], $imageData, $pdfData));
 
         // Handle Save & Continue functionality
         $message = 'Prophecy created successfully.';
+        if (!empty($imageData)) {
+            $message .= ' Featured image uploaded.';
+        }
         if (!empty($pdfData)) {
-            $message .= ' PDF file uploaded successfully.';
+            $message .= ' PDF file uploaded.';
         }
         
         if ($request->has('save_and_continue')) {
@@ -110,7 +124,22 @@ class ProphecyController extends Controller
             'video_url' => 'nullable|url|max:500',
             'prayer_points_content' => 'nullable|string',
             'pdf_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
+            'featured_image' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120', // 5MB max
         ]);
+
+        // Handle featured image upload
+        $imageData = [];
+        if ($request->hasFile('featured_image')) {
+            // Delete old image if exists
+            if ($prophecy->featured_image && Storage::disk('public')->exists($prophecy->featured_image)) {
+                Storage::disk('public')->delete($prophecy->featured_image);
+            }
+            
+            $file = $request->file('featured_image');
+            $filename = 'featured_' . $prophecy->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('prophecy_images', $filename, 'public');
+            $imageData = ['featured_image' => $path];
+        }
 
         // Handle PDF file upload
         $pdfData = [];
@@ -147,10 +176,14 @@ class ProphecyController extends Controller
             'video_url' => $request->video_url,
             'prayer_points' => $request->prayer_points_content,
             'published_at' => $request->status === 'published' ? now() : null,
-        ], $pdfData));
+            'week_number' => $request->week_number,
+        ], $imageData, $pdfData));
 
         // Handle Save & Continue functionality
         $message = 'Prophecy updated successfully.';
+        if (!empty($imageData)) {
+            $message .= ' Featured image updated.';
+        }
         if (!empty($pdfData)) {
             $message .= ' PDF file uploaded successfully.';
         }
