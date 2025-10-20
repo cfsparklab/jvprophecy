@@ -455,6 +455,47 @@ public function showProphecy(Request $request, $id)
     }
 
     /**
+     * View PDF in web-based viewer (PDF.js)
+     */
+    public function viewPdfInBrowser(Request $request, $id)
+    {
+        // Check authentication
+        if (!Auth::check()) {
+            return response()->view('errors.auth-required', [
+                'message' => 'Please login to view PDFs.',
+                'login_url' => route('login'),
+                'return_url' => $request->fullUrl()
+            ], 401);
+        }
+
+        $language = $request->language ?? (Auth::user()->preferred_language ?? 'en');
+        $prophecy = Prophecy::findOrFail($id);
+        
+        // Get the title
+        if ($language === 'en') {
+            $title = $prophecy->title;
+        } else {
+            $translation = $prophecy->translations()->where('language', $language)->first();
+            $title = $translation ? $translation->title : $prophecy->title;
+        }
+        
+        // Generate PDF URLs
+        $pdfUrl = route('prophecies.download.pdf', [
+            'id' => $id,
+            'language' => $language,
+            'action' => 'view'  // View action for streaming
+        ]);
+        
+        $downloadUrl = route('prophecies.download.pdf', [
+            'id' => $id,
+            'language' => $language,
+            'action' => 'download'  // Download action
+        ]);
+        
+        return view('public.pdf-viewer', compact('title', 'pdfUrl', 'downloadUrl'));
+    }
+
+    /**
      * Test method for PDF generation (bypasses auth for testing)
      */
     public function testPdfGeneration(Request $request, $id)

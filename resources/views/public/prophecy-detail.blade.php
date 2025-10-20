@@ -90,21 +90,24 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                 @foreach($languages as $langCode => $langName)
                     @php
                         $hasPdf = false;
-                        $pdfUrl = '';
+                        $viewUrl = '';
+                        $downloadUrl = '';
                         $featuredImage = $prophecy->featured_image;
                         
                         if ($langCode === 'en') {
                             if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
                                 $hasPdf = true;
-                                // Use route-based URL for white-labeled, authenticated access
-                                $pdfUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
+                                // Use PDF viewer route for better compatibility
+                                $viewUrl = route('prophecies.view.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
+                                $downloadUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode, 'action' => 'download']);
                             }
                         } else {
                             $translation = $prophecy->translations->where('language', $langCode)->first();
                             if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
                                 $hasPdf = true;
-                                // Use route-based URL for white-labeled, authenticated access
-                                $pdfUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
+                                // Use PDF viewer route for better compatibility
+                                $viewUrl = route('prophecies.view.pdf', ['id' => $prophecy->id, 'language' => $langCode]);
+                                $downloadUrl = route('prophecies.download.pdf', ['id' => $prophecy->id, 'language' => $langCode, 'action' => 'download']);
                             }
                             // Use translation image if available
                             if ($translation && $translation->featured_image) {
@@ -114,9 +117,9 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                     @endphp
                     
                     <div style="text-align: center;">
-                        <!-- Featured Image (Clickable to open PDF in viewer) -->
+                        <!-- Featured Image (Clickable to open PDF in web viewer) -->
                         @if($hasPdf)
-                            <a href="{{ $pdfUrl }}&action=view" target="_blank" style="display: block; margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s ease; cursor: pointer;"
+                            <a href="{{ $viewUrl }}" target="_blank" style="display: block; margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s ease; cursor: pointer;"
                                onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 12px 32px rgba(0,0,0,0.2)';"
                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.15)';">
                                 @if($featuredImage)
@@ -150,7 +153,7 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         
                         <!-- Download PDF Button -->
                         @if($hasPdf)
-                            <a href="{{ $pdfUrl }}&action=download" 
+                            <a href="{{ $downloadUrl }}" 
                                style="display: inline-flex; align-items: center; gap: 0.75rem; background: #2d3748; color: white; padding: 1rem 2.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);"
                                onmouseover="this.style.background='#1a202c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(45, 55, 72, 0.4)';"
                                onmouseout="this.style.background='#2d3748'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(45, 55, 72, 0.3)';">
