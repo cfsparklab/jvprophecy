@@ -510,26 +510,37 @@ public function showProphecy(Request $request, $id)
         $pdfDisk = env('PDF_STORAGE_DISK', 'public');
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
-            // For cloud storage: Stream with proper headers
-            
+            // For cloud storage: generate a signed temporary URL with proper headers
             if (!\Storage::disk($pdfDisk)->exists($pdfFile)) {
                 abort(404, 'PDF not found');
             }
-            
-            // Get file from cloud storage
-            $content = \Storage::disk($pdfDisk)->get($pdfFile);
-            
-            // CRITICAL: Use make() and explicit binary headers for mobile
-            return response()->make($content, 200)
-                ->header('Content-Type', 'application/octet-stream')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
-                ->header('Content-Length', strlen($content))
-                ->header('Content-Transfer-Encoding', 'binary')
-                ->header('Accept-Ranges', 'bytes')
-                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                ->header('Pragma', 'no-cache')
-                ->header('Expires', '0')
-                ->header('X-Content-Type-Options', 'nosniff');
+
+            try {
+                $signedUrl = \Storage::disk($pdfDisk)->temporaryUrl(
+                    $pdfFile,
+                    now()->addMinutes(5),
+                    [
+                        'ResponseContentDisposition' => 'attachment; filename="' . $filename . '"',
+                        'ResponseContentType' => 'application/pdf',
+                    ]
+                );
+                // Use away() to avoid any middleware altering the redirect
+                return redirect()->away($signedUrl);
+            } catch (\Throwable $e) {
+                // Fallback: stream content if temporaryUrl is not supported
+                $content = \Storage::disk($pdfDisk)->get($pdfFile);
+                return response()->make($content, 200, [
+                    'Content-Type' => 'application/octet-stream',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    'Content-Length' => strlen($content),
+                    'Content-Transfer-Encoding' => 'binary',
+                    'Accept-Ranges' => 'bytes',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0',
+                    'X-Content-Type-Options' => 'nosniff',
+                ]);
+            }
         } else {
             // For local storage: Serve the file
             $pdfService = app(\App\Services\PdfStorageService::class);
