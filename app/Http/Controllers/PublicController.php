@@ -405,6 +405,7 @@ public function showProphecy(Request $request, $id)
         // Check action parameter: 'view' to open in browser, 'download' to download
         $action = $request->input('action', 'download');
         $disposition = $action === 'view' ? 'inline' : 'attachment';
+        $contentType = $action === 'view' ? 'application/pdf' : 'application/octet-stream';
 
         // Check if we're using cloud storage
         $pdfDisk = env('PDF_STORAGE_DISK', 'public');
@@ -422,12 +423,16 @@ public function showProphecy(Request $request, $id)
             }
             
             return response()->make($content, 200, [
-                'Content-Type' => 'application/pdf',
+                'Content-Type' => $contentType,
                 'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
                 'Content-Length' => strlen($content),
                 'Accept-Ranges' => 'bytes',
-                'Cache-Control' => 'public, max-age=3600',
+                'Cache-Control' => $action === 'view' ? 'public, max-age=3600' : 'no-cache, no-store, must-revalidate',
+                'Pragma' => $action === 'view' ? 'public' : 'no-cache',
+                'Expires' => '0',
                 'X-Content-Type-Options' => 'nosniff',
+                'Content-Transfer-Encoding' => 'binary',
+                'Content-Description' => 'File Transfer',
             ]);
         } else {
             // For local storage, serve the file directly
@@ -441,16 +446,25 @@ public function showProphecy(Request $request, $id)
                 ], 404);
             }
             
-            // Use BinaryFileResponse for better handling
-            $response = response()->file($pdfPath, [
+            if ($action === 'download') {
+                // Force download with octet-stream
+                return response()->download($pdfPath, $filename, [
+                    'Content-Type' => 'application/octet-stream',
+                    'Content-Transfer-Encoding' => 'binary',
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0',
+                    'X-Content-Type-Options' => 'nosniff',
+                ]);
+            }
+            // Inline view
+            return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
                 'Accept-Ranges' => 'bytes',
                 'Cache-Control' => 'public, max-age=3600',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
-            
-            return $response;
         }
     }
 
@@ -507,13 +521,13 @@ public function showProphecy(Request $request, $id)
             
             // CRITICAL: Use make() and explicit binary headers for mobile
             return response()->make($content, 200)
-                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Type', 'application/octet-stream')
                 ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
                 ->header('Content-Length', strlen($content))
                 ->header('Content-Transfer-Encoding', 'binary')
                 ->header('Accept-Ranges', 'bytes')
-                ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
-                ->header('Pragma', 'public')
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
                 ->header('Expires', '0')
                 ->header('X-Content-Type-Options', 'nosniff');
         } else {
@@ -526,7 +540,12 @@ public function showProphecy(Request $request, $id)
             }
             
             return response()->download($pdfPath, $filename, [
-                'Content-Type' => 'application/pdf',
+                'Content-Type' => 'application/octet-stream',
+                'Content-Transfer-Encoding' => 'binary',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+                'X-Content-Type-Options' => 'nosniff',
             ]);
         }
     }
