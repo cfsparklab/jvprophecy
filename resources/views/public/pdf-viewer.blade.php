@@ -351,8 +351,26 @@
         /**
          * Download PDF
          */
-        document.getElementById('download-pdf').addEventListener('click', function() {
-            window.location.href = downloadUrl;
+        document.getElementById('download-pdf').addEventListener('click', async function() {
+            try {
+                const res = await fetch(downloadUrl, { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('Network error');
+                const ct = (res.headers.get('content-type')||'').toLowerCase();
+                if (!ct.includes('application/pdf') && !ct.includes('application/octet-stream')) {
+                    window.open(downloadUrl, '_blank');
+                    return;
+                }
+                const blob = await res.blob();
+                const a = document.createElement('a');
+                const blobUrl = URL.createObjectURL(blob);
+                a.href = blobUrl;
+                a.download = (document.title || 'prophecy') + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(blobUrl); a.remove(); }, 200);
+            } catch (e) {
+                window.open(downloadUrl, '_blank');
+            }
         });
         
         /**

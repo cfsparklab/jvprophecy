@@ -155,7 +155,7 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         
                         <!-- Download PDF Button -->
                         @if($hasPdf)
-                            <a href="{{ $downloadUrl }}"
+                            <a href="{{ $downloadUrl }}" onclick="event.preventDefault(); downloadFile('{{ $downloadUrl }}', 'prophecy_{{ $prophecy->id }}_{{ $langCode }}.pdf')"
                                style="display: inline-flex; align-items: center; gap: 0.75rem; background: #2d3748; color: white; padding: 1rem 2.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);"
                                onmouseover="this.style.background='#1a202c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(45, 55, 72, 0.4)';"
                                onmouseout="this.style.background='#2d3748'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(45, 55, 72, 0.3)';">
@@ -243,3 +243,33 @@ $pdfService = app(\App\Services\PdfStorageService::class);
 }
 </style>
 @endsection
+@push('scripts')
+<script>
+async function downloadFile(url, filename) {
+  try {
+    const res = await fetch(url, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Network error');
+    const ct = (res.headers.get('content-type')||'').toLowerCase();
+    if (!ct.includes('application/pdf') && !ct.includes('application/octet-stream')) {
+      // Fallback open in new tab if server sent HTML
+      window.open(url, '_blank');
+      return;
+    }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    const blobUrl = URL.createObjectURL(blob);
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+      a.remove();
+    }, 200);
+  } catch (e) {
+    window.open(url, '_blank');
+  }
+}
+</script>
+@endpush
