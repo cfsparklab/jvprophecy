@@ -459,6 +459,14 @@ public function showProphecy(Request $request, $id)
      */
     public function directDownloadPdf(Request $request, $id)
     {
+        // Disable error display and clear output buffers for clean PDF output
+        ini_set('display_errors', 0);
+        error_reporting(0);
+        
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
         if (!Auth::check()) {
             return redirect()->route('login');
         }
@@ -486,21 +494,27 @@ public function showProphecy(Request $request, $id)
         $pdfDisk = env('PDF_STORAGE_DISK', 'public');
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
-            // For cloud storage, get content and stream
+            // For cloud storage, get content and stream with mobile-optimized headers
             $content = $pdfService->getPdfContent($pdfFile);
             
             if (!$content) {
                 abort(404, 'PDF could not be retrieved');
             }
             
-            return response($content, 200, [
+            // Create response with explicit headers for mobile compatibility
+            return response()->make($content, 200, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => 'attachment; filename="' . $filename . '"',
                 'Content-Length' => strlen($content),
-                'Cache-Control' => 'public, max-age=3600',
+                'Content-Transfer-Encoding' => 'binary',
+                'Accept-Ranges' => 'bytes',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Pragma' => 'public',
+                'Expires' => '0',
+                'X-Content-Type-Options' => 'nosniff',
             ]);
         } else {
-            // For local storage
+            // For local storage, use BinaryFileResponse
             $pdfPath = $pdfService->getPdfPath($pdfFile);
             
             if (!$pdfPath || !file_exists($pdfPath)) {
@@ -509,6 +523,10 @@ public function showProphecy(Request $request, $id)
             
             return response()->download($pdfPath, $filename, [
                 'Content-Type' => 'application/pdf',
+                'Content-Transfer-Encoding' => 'binary',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Pragma' => 'public',
+                'Expires' => '0',
             ]);
         }
     }
