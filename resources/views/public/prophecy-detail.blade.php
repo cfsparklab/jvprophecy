@@ -114,9 +114,9 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                     @endphp
                     
                     <div style="text-align: center;">
-                        <!-- Featured Image (Clickable to open PDF) -->
+                        <!-- Featured Image (Clickable to open PDF in viewer) -->
                         @if($hasPdf)
-                            <a href="{{ $pdfUrl }}" target="_blank" style="display: block; margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s ease; cursor: pointer;"
+                            <a href="{{ $pdfUrl }}&action=view" target="_blank" style="display: block; margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s ease; cursor: pointer;"
                                onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 12px 32px rgba(0,0,0,0.2)';"
                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.15)';">
                                 @if($featuredImage)
@@ -150,13 +150,12 @@ $pdfService = app(\App\Services\PdfStorageService::class);
                         
                         <!-- Download PDF Button -->
                         @if($hasPdf)
-                            <a href="{{ $pdfUrl }}" 
-                               download="prophecy_{{ $prophecy->id }}_{{ $langCode }}.pdf"
+                            <a href="{{ $pdfUrl }}&action=download" 
                                style="display: inline-flex; align-items: center; gap: 0.75rem; background: #2d3748; color: white; padding: 1rem 2.5rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);"
                                onmouseover="this.style.background='#1a202c'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(45, 55, 72, 0.4)';"
                                onmouseout="this.style.background='#2d3748'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(45, 55, 72, 0.3)';">
                                 <span>Download PDF</span>
-                                <i class="fas fa-arrow-right"></i>
+                                <i class="fas fa-download"></i>
                             </a>
                         @else
                             <div style="display: inline-flex; align-items: center; gap: 0.75rem; background: #cbd5e1; color: #64748b; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: not-allowed; opacity: 0.6;">

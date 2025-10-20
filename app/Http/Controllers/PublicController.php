@@ -394,11 +394,15 @@ public function showProphecy(Request $request, $id)
         $cleanTitle = preg_replace('/[^A-Za-z0-9\-_]/', '_', $prophecy->title);
         $filename = 'prophecy_' . $prophecy->id . '_' . $cleanTitle . '_' . $language . '.pdf';
 
+        // Check action parameter: 'view' to open in browser, 'download' to download
+        $action = $request->input('action', 'download');
+        $disposition = $action === 'view' ? 'inline' : 'attachment';
+
         // Check if we're using cloud storage
         $pdfDisk = env('PDF_STORAGE_DISK', 'r2');
         
         if ($pdfDisk === 'r2' || $pdfDisk === 's3') {
-            // For cloud storage, redirect to the signed URL
+            // For cloud storage, get content and stream
             $content = $pdfService->getPdfContent($pdfFile);
             
             if (!$content) {
@@ -411,11 +415,9 @@ public function showProphecy(Request $request, $id)
             
             return response($content, 200, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
                 'Content-Description' => 'File Transfer',
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache',
-                'Expires' => '0',
+                'Cache-Control' => 'public, max-age=3600',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
         } else {
@@ -432,11 +434,9 @@ public function showProphecy(Request $request, $id)
             
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
                 'Content-Description' => 'File Transfer',
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache',
-                'Expires' => '0',
+                'Cache-Control' => 'public, max-age=3600',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
         }
