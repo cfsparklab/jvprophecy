@@ -65,61 +65,43 @@ use Illuminate\Support\Facades\Storage;
     </header>
     
     <!-- Main Content -->
-    <main class="intel-container" style="padding: var(--space-xl) 0;">
+    <main class="intel-container" style="padding: 2.5rem 0;">
         
-        <!-- Language Switcher -->
-        <div style="display: flex; justify-content: center; margin-bottom: var(--space-xl);">
-            <div class="intel-card" style="padding: var(--space-lg);">
-                <div style="display: flex; align-items: center; gap: var(--space-lg); flex-wrap: wrap; justify-content: center;">
-                    <span style="font-size: 0.875rem; font-weight: 600; color: var(--intel-gray-700);">
-                        <i class="fas fa-language" style="margin-right: var(--space-sm);"></i>
-                        Switch Language:
-                    </span>
-                    <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
-                        @php
-                            $languages = [
-                                'en' => 'English',
-                                'ta' => 'தமிழ்', 
-                                'kn' => 'ಕನ್ನಡ',
-                                'te' => 'తెలుగు',
-                                'ml' => 'മലയാളം',
-                                'hi' => 'हिंदी'
-                            ];
-                        @endphp
-                        
-                        @foreach($languages as $langCode => $langName)
-                        <a href="{{ route('prophecies.show', ['id' => $prophecy->id, 'language' => $langCode]) }}"
-                           class="intel-btn {{ $language === $langCode ? 'intel-btn-primary' : 'intel-btn-secondary' }} intel-btn-sm"
-                           style="min-width: 80px; text-align: center;">
-                            {{ $langName }}
-                        </a>
-                        @endforeach
+        <!-- Modern Content Container -->
+        <div style="max-width: 1100px; margin: 0 auto;">
+            
+            <!-- Prophecy Header Card -->
+            <div style="background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 2.5rem; margin-bottom: 2rem;">
+                
+                <!-- Meta Info Bar -->
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-calendar-alt" style="color: #3b82f6; font-size: 1.125rem;"></i>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #475569;">{{ $prophecy->jebikalam_vanga_date->format('F d, Y') }}</span>
+                    </div>
+                    
+                    @if($prophecy->category)
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-tag" style="color: #8b5cf6; font-size: 1.125rem;"></i>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #475569;">{{ $prophecy->category->name }}</span>
+                    </div>
+                    @endif
+                    
+                    @if($prophecy->week_number)
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-calendar-week" style="color: #f59e0b; font-size: 1.125rem;"></i>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #475569;">Week {{ $prophecy->week_number }}</span>
+                    </div>
+                    @endif
+                    
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+                        <i class="fas fa-eye" style="color: #64748b; font-size: 1rem;"></i>
+                        <span style="font-size: 0.875rem; color: #64748b;">{{ number_format($prophecy->view_count) }} views</span>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Book-Style Content -->
-        <article class="book-page page-curl" style="max-width: 850px; margin: 0 auto; padding: 3.5rem 4rem 4rem 4rem; position: relative;">
-            
-            <!-- Decorative page number top -->
-            <div style="position: absolute; top: 1.5rem; right: 2rem; font-family: 'Cinzel', serif; font-size: 0.875rem; font-weight: 600;" class="theme-accent-dark">
-                {{ date('d.m.Y') }}
-            </div>
-            
-            <!-- Decorative ornament -->
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <svg width="100" height="20" viewBox="0 0 100 20" style="opacity: 0.6;">
-                    <path d="M0 10 Q25 5, 50 10 T100 10" fill="none" stroke="var(--accent-color)" stroke-width="1.5"/>
-                    <circle cx="50" cy="10" r="3" fill="var(--accent-color)"/>
-                    <circle cx="25" cy="8" r="1.5" fill="var(--accent-color)"/>
-                    <circle cx="75" cy="8" r="1.5" fill="var(--accent-color)"/>
-                </svg>
-            </div>
-            
-            <!-- Prophecy Header -->
-            <header style="margin-bottom: 3rem; text-align: center; padding-bottom: 2rem;" class="theme-border">
-                <h1 style="margin: 0 0 1rem 0; font-family: 'Cinzel', serif; font-size: 2.5rem; font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; text-shadow: 1px 1px 2px var(--shadow-color);" class="theme-heading">
+                
+                <!-- Title -->
+                <h1 style="margin: 0 0 1.5rem 0; font-size: 2.5rem; font-weight: 800; line-height: 1.2; color: #1e293b; letter-spacing: -0.02em;">
                     @if($translation && $translation->title)
                         {{ $translation->title }}
                     @else
@@ -127,180 +109,205 @@ use Illuminate\Support\Facades\Storage;
                     @endif
                 </h1>
                 
-                <!-- Subtitle ornament -->
-                <div style="font-family: 'Merriweather', serif; font-size: 0.95rem; font-style: italic; margin-top: 0.5rem;" class="theme-accent-dark">
-                    Divine Revelation • {{ $prophecy->jebikalam_vanga_date->format('F d, Y') }}
+                <!-- Language Switcher -->
+                <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: #f8fafc; border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-language" style="color: #3b82f6; font-size: 1.125rem;"></i>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: #475569;">Language:</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            @php
+                                $languages = [
+                                    'en' => 'English',
+                                    'ta' => 'தமிழ்', 
+                                    'kn' => 'ಕನ್ನಡ',
+                                    'te' => 'తెలుగు',
+                                    'ml' => 'മലയാളം',
+                                    'hi' => 'हिंदी'
+                                ];
+                            @endphp
+                            
+                            @foreach($languages as $langCode => $langName)
+                            <a href="{{ route('prophecies.show', ['id' => $prophecy->id, 'language' => $langCode]) }}"
+                               style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: all 0.2s; {{ $language === $langCode ? 'background: #3b82f6; color: white;' : 'background: white; color: #64748b; border: 1px solid #e2e8f0;' }}"
+                               onmouseover="if ('{{ $language }}' !== '{{ $langCode }}') { this.style.background='#e2e8f0'; this.style.borderColor='#cbd5e1'; }"
+                               onmouseout="if ('{{ $language }}' !== '{{ $langCode }}') { this.style.background='white'; this.style.borderColor='#e2e8f0'; }">
+                                {{ $langName }}
+                            </a>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 
-                
                 <!-- Action Buttons -->
-                <div style="display: flex; justify-content: center; gap: var(--space-md); flex-wrap: wrap; margin: 2rem 0;">
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                     @if($prophecy->video_url)
-                    <button onclick="openVideoModal('{{ $prophecy->video_url }}')" class="youtube-btn" style="background: #ff0000; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                        <i class="fab fa-youtube"></i>
-                        Watch Video
+                    <button onclick="openVideoModal('{{ $prophecy->video_url }}')" 
+                            style="background: #ff0000; color: white; padding: 0.875rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9375rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.625rem; transition: all 0.2s; box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);"
+                            onmouseover="this.style.background='#cc0000'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.3)';"
+                            onmouseout="this.style.background='#ff0000'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(255, 0, 0, 0.2)';">
+                        <i class="fab fa-youtube" style="font-size: 1.125rem;"></i>
+                        <span>Watch Video</span>
                     </button>
                     @endif
                     
-                        <!-- PDF Download (only if uploaded PDF exists) -->
-                        @php
-                            $hasPdf = false;
-                            $pdfUrl = '';
-                            $pdfService = app(\App\Services\PdfStorageService::class);
-                            
-                            if ($language === 'en') {
-                                if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
-                                    $hasPdf = true;
-                                    $pdfUrl = $pdfService->getPdfUrl($prophecy->pdf_file);
-                                }
-                            } else {
-                                $translation = $prophecy->translations->where('language', $language)->first();
-                                if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
-                                    $hasPdf = true;
-                                    $pdfUrl = $pdfService->getPdfUrl($translation->pdf_file);
-                                }
-                            }
-                        @endphp
+                    @php
+                        $hasPdf = false;
+                        $pdfUrl = '';
+                        $pdfService = app(\App\Services\PdfStorageService::class);
                         
-                        @if($hasPdf && $pdfUrl)
-                            <a href="{{ $pdfUrl }}" 
-                               target="_blank"
-                               download="prophecy_{{ $prophecy->id }}_{{ $language }}.pdf"
-                               id="pdf-download-btn"
-                               class="pdf-download-link"
-                               style="background: #10b981; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;" 
-                               onmouseover="this.style.background='#059669'" 
-                               onmouseout="this.style.background='#10b981'">
-                                <i class="fas fa-file-pdf"></i>
-                                <span id="download-text">Download PDF</span>
-                            </a>
-                        @else
-                            <div style="background: #f3f4f6; color: #6b7280; padding: 12px 24px; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-clock"></i>
-                                PDF Coming Soon
-                            </div>
-                        @endif
+                        if ($language === 'en') {
+                            if ($prophecy->pdf_file && $pdfService->pdfExists($prophecy->pdf_file)) {
+                                $hasPdf = true;
+                                $pdfUrl = $pdfService->getPdfUrl($prophecy->pdf_file);
+                            }
+                        } else {
+                            $translation = $prophecy->translations->where('language', $language)->first();
+                            if ($translation && $translation->pdf_file && $pdfService->pdfExists($translation->pdf_file)) {
+                                $hasPdf = true;
+                                $pdfUrl = $pdfService->getPdfUrl($translation->pdf_file);
+                            }
+                        }
+                    @endphp
                     
-                    <a href="{{ route('prophecies.print', ['id' => $prophecy->id, 'language' => $language]) }}" target="_blank" style="background: #3b82f6; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-                        <i class="fas fa-print"></i>
-                        Print
+                    @if($hasPdf && $pdfUrl)
+                        <a href="{{ $pdfUrl }}" 
+                           target="_blank"
+                           download="prophecy_{{ $prophecy->id }}_{{ $language }}.pdf"
+                           id="pdf-download-btn"
+                           style="background: #10b981; color: white; padding: 0.875rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9375rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.625rem; transition: all 0.2s; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);"
+                           onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)';"
+                           onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(16, 185, 129, 0.2)';">
+                            <i class="fas fa-file-pdf" style="font-size: 1.125rem;"></i>
+                            <span id="download-text">Download PDF</span>
+                        </a>
+                    @else
+                        <div style="background: #f3f4f6; color: #6b7280; padding: 0.875rem 1.5rem; border: 1px solid #d1d5db; border-radius: 10px; font-weight: 600; font-size: 0.9375rem; display: inline-flex; align-items: center; gap: 0.625rem;">
+                            <i class="fas fa-clock" style="font-size: 1.125rem;"></i>
+                            <span>PDF Coming Soon</span>
+                        </div>
+                    @endif
+                
+                    <a href="{{ route('prophecies.print', ['id' => $prophecy->id, 'language' => $language]) }}" 
+                       target="_blank" 
+                       style="background: #3b82f6; color: white; padding: 0.875rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9375rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.625rem; transition: all 0.2s; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);"
+                       onmouseover="this.style.background='#2563eb'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)';"
+                       onmouseout="this.style.background='#3b82f6'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(59, 130, 246, 0.2)';">
+                        <i class="fas fa-print" style="font-size: 1.125rem;"></i>
+                        <span>Print</span>
                     </a>
                 </div>
-            </header>
-            
-            <!-- Featured Image -->
-            @if($prophecy->featured_image)
-            <div style="margin-bottom: var(--space-xl); text-align: center;">
-                <img src="{{ Storage::url($prophecy->featured_image) }}" 
-                     alt="{{ $prophecy->title }}"
-                     style="max-width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
             </div>
-            @endif
             
-            <!-- Excerpt - Illuminated Quote -->
-            @if(($translation && $translation->excerpt) || $prophecy->excerpt)
-            <div class="theme-bg-accent theme-border" style="border-left-width: 4px; border-right-width: 4px; padding: 2rem; margin-bottom: 3rem; border-radius: 4px; position: relative; box-shadow: inset 0 0 20px var(--quote-bg);">
-                <!-- Opening quote mark -->
-                <div style="position: absolute; top: -10px; left: 20px; font-size: 4rem; opacity: 0.3; font-family: Georgia, serif; line-height: 1;" class="theme-accent">"</div>
+            <!-- Content Card -->
+            <div style="background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 3rem;">
                 
-                <p style="margin: 0; font-family: 'Merriweather', serif; font-size: 1.25rem; font-weight: 400; line-height: 1.8; font-style: italic; text-align: center; padding: 0 1rem;" class="theme-heading">
-                    {{ ($translation && $translation->excerpt) ? $translation->excerpt : $prophecy->excerpt }}
-                </p>
-                
-                <!-- Closing quote mark -->
-                <div style="position: absolute; bottom: -10px; right: 20px; font-size: 4rem; opacity: 0.3; font-family: Georgia, serif; line-height: 1;" class="theme-accent">"</div>
-            </div>
-            @endif
-            
-            <!-- Main Content - Book Reading Style -->
-            <div class="reading-content prophecy-content" style="margin-bottom: 3rem;">
-                @if($translation && !empty($translation->content) && strlen($translation->content) > 0)
-                    <div class="content-display" lang="{{ $language }}">
-                        {!! $translation->content !!}
-                    </div>
-                @elseif($translation && !empty($translation->description) && strlen($translation->description) > 0)
-                    <div class="content-display" lang="{{ $language }}">
-                        {!! $translation->description !!}
-                    </div>
-                @elseif($prophecy->description)
-                    <div class="content-display" lang="en">
-                        {!! $prophecy->description !!}
-                    </div>
-                @else
-                    <!-- Translation Not Available -->
-                    <div style="background: linear-gradient(135deg, var(--warning-color-light) 0%, #fef3c7 100%); border: 1px solid var(--warning-color); border-radius: var(--radius-lg); padding: var(--space-xl); text-align: center;">
-                        <i class="fas fa-language" style="font-size: 3rem; color: var(--warning-color); margin-bottom: var(--space-lg);"></i>
-                        <h3 style="margin: 0 0 var(--space-md) 0; font-size: 1.25rem; font-weight: 600; color: #92400e;">Translation Not Available</h3>
-                        <p style="margin: 0 0 var(--space-md) 0; color: #b45309;">
-                            This prophecy is not yet available in 
-                            @switch($language)
-                                @case('ta') தமிழ் (Tamil) @break
-                                @case('kn') ಕನ್ನಡ (Kannada) @break
-                                @case('te') తెలుగు (Telugu) @break
-                                @case('ml') മലയാളം (Malayalam) @break
-                                @case('hi') हिंदी (Hindi) @break
-                                @default {{ ucfirst($language) }}
-                            @endswitch
-                        </p>
-                        <p style="margin: 0; font-size: 0.875rem; color: #a16207;">
-                            Please try selecting English or another available language above, or check back later.
-                        </p>
-                    </div>
+                <!-- Featured Image -->
+                @if($prophecy->featured_image)
+                <div style="margin-bottom: 2rem;">
+                    <img src="{{ Storage::url($prophecy->featured_image) }}" 
+                         alt="{{ $prophecy->title }}"
+                         style="width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+                </div>
                 @endif
-            </div>
-            
-            <!-- Prayer Points Section -->
-            @php
-                $prayerPoints = null;
-                if ($translation && !empty($translation->prayer_points)) {
-                    $prayerPoints = $translation->prayer_points;
-                } elseif (!empty($prophecy->prayer_points)) {
-                    $prayerPoints = $prophecy->prayer_points;
-                }
-            @endphp
-            
-            @if($prayerPoints)
-            <!-- Prayer Points - Decorative Section -->
-            <section style="margin-top: 3rem; padding-top: 3rem; border-top: 3px double var(--accent-color);">
-                <!-- Decorative ornament -->
-                <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <svg width="120" height="30" viewBox="0 0 120 30" style="opacity: 0.6;">
-                        <path d="M10 15 L50 15 M70 15 L110 15" stroke="var(--accent-color)" stroke-width="1.5"/>
-                        <circle cx="60" cy="15" r="8" fill="none" stroke="var(--accent-color)" stroke-width="1.5"/>
-                        <path d="M55 15 L60 10 L65 15 L60 20 Z" fill="var(--accent-color)"/>
-                    </svg>
-                </div>
                 
-                <header style="margin-bottom: 2rem; text-align: center;">
-                    <h2 style="margin: 0; font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; gap: 0.75rem;" class="theme-heading">
-                        <i class="fas fa-praying-hands theme-accent"></i>
-                        Prayer Points
+                <!-- Excerpt Highlight -->
+                @if(($translation && $translation->excerpt) || $prophecy->excerpt)
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 1.75rem 2rem; margin-bottom: 2.5rem; border-radius: 12px;">
+                    <div style="display: flex; gap: 1rem;">
+                        <div style="flex-shrink: 0;">
+                            <i class="fas fa-quote-left" style="font-size: 1.75rem; color: #3b82f6; opacity: 0.7;"></i>
+                        </div>
+                        <p style="margin: 0; font-size: 1.125rem; font-weight: 500; line-height: 1.75; color: #1e40af; font-style: italic;">
+                            {{ ($translation && $translation->excerpt) ? $translation->excerpt : $prophecy->excerpt }}
+                        </p>
+                    </div>
+                </div>
+                @endif
+                
+                <!-- Content Section Header -->
+                <div style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #f1f5f9;">
+                    <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="fas fa-scroll" style="color: #8b5cf6; font-size: 1.25rem;"></i>
+                        <span>Prophecy Message</span>
                     </h2>
-                    <p style="margin: 0.75rem 0 0 0; font-size: 0.95rem; font-family: 'Merriweather', serif; font-style: italic;" class="theme-accent-dark">
-                        Sacred Intercessions for this Divine Word
-                    </p>
-                </header>
-                
-                <div class="reading-content prayer-points-content theme-bg-accent" style="border: 2px solid var(--border-color); border-radius: 6px; padding: 2.5rem; box-shadow: inset 0 0 30px var(--quote-bg);" lang="{{ $language }}">
-                    {!! $prayerPoints !!}
                 </div>
-            </section>
-            @endif
-            
-            <!-- Closing ornament -->
-            <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
-                <svg width="80" height="20" viewBox="0 0 80 20" style="opacity: 0.5;">
-                    <path d="M0 10 L80 10" stroke="var(--accent-color)" stroke-width="1"/>
-                    <circle cx="40" cy="10" r="4" fill="var(--accent-color)"/>
-                    <circle cx="20" cy="10" r="2" fill="var(--accent-color)"/>
-                    <circle cx="60" cy="10" r="2" fill="var(--accent-color)"/>
-                </svg>
-                <p style="margin: 1rem 0 0 0; font-family: 'Cinzel', serif; font-size: 0.875rem; letter-spacing: 0.1em;" class="theme-accent-dark">
-                    ✦ END OF PROPHECY ✦
-                </p>
+                
+                <!-- Main Content -->
+                <div class="prophecy-content" style="font-size: 1.0625rem; line-height: 1.8; color: #334155;">
+                    @if($translation && !empty($translation->content) && strlen($translation->content) > 0)
+                        <div class="content-display" lang="{{ $language }}">
+                            {!! $translation->content !!}
+                        </div>
+                    @elseif($translation && !empty($translation->description) && strlen($translation->description) > 0)
+                        <div class="content-display" lang="{{ $language }}">
+                            {!! $translation->description !!}
+                        </div>
+                    @elseif($prophecy->description)
+                        <div class="content-display" lang="en">
+                            {!! $prophecy->description !!}
+                        </div>
+                    @else
+                        <!-- Translation Not Available -->
+                        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 2.5rem; text-align: center;">
+                            <i class="fas fa-language" style="font-size: 3.5rem; color: #d97706; margin-bottom: 1.5rem; display: block;"></i>
+                            <h3 style="margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 700; color: #92400e;">Translation Not Available</h3>
+                            <p style="margin: 0 0 1rem 0; font-size: 1.0625rem; color: #b45309;">
+                                This prophecy is not yet available in 
+                                @switch($language)
+                                    @case('ta') <strong>தமிழ் (Tamil)</strong> @break
+                                    @case('kn') <strong>ಕನ್ನಡ (Kannada)</strong> @break
+                                    @case('te') <strong>తెలుగు (Telugu)</strong> @break
+                                    @case('ml') <strong>മലയാളം (Malayalam)</strong> @break
+                                    @case('hi') <strong>हिंदी (Hindi)</strong> @break
+                                    @default <strong>{{ ucfirst($language) }}</strong>
+                                @endswitch
+                            </p>
+                            <p style="margin: 0; font-size: 0.9375rem; color: #a16207;">
+                                Please select <strong>English</strong> or another available language above, or check back later.
+                            </p>
+                        </div>
+                    @endif
+                </div>
+                
+                <!-- Prayer Points Section -->
+                @php
+                    $prayerPoints = null;
+                    if ($translation && !empty($translation->prayer_points)) {
+                        $prayerPoints = $translation->prayer_points;
+                    } elseif (!empty($prophecy->prayer_points)) {
+                        $prayerPoints = $prophecy->prayer_points;
+                    }
+                @endphp
+                
+                @if($prayerPoints)
+                <div style="margin-top: 3rem; padding-top: 3rem; border-top: 3px solid #e2e8f0;">
+                    <!-- Section Header -->
+                    <div style="margin-bottom: 2rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+                                <i class="fas fa-praying-hands" style="color: white; font-size: 1.25rem;"></i>
+                            </div>
+                            <div>
+                                <h2 style="margin: 0; font-size: 1.75rem; font-weight: 700; color: #1e293b;">Prayer Points</h2>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.9375rem; color: #64748b;">Pray these declarations over your life</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Prayer Content -->
+                    <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px solid #a78bfa; border-radius: 12px; padding: 2.5rem;" lang="{{ $language }}">
+                        <div class="prayer-points-content" style="font-size: 1.0625rem; line-height: 1.8; color: #334155;">
+                            {!! $prayerPoints !!}
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
             </div>
             
-        </article>
+        </div>
         
     </main>
 </div>
@@ -346,6 +353,73 @@ use Illuminate\Support\Facades\Storage;
 .content-display {
     line-height: 1.8;
     word-wrap: break-word;
+}
+
+/* Better content formatting */
+.content-display p {
+    margin-bottom: 1.25rem;
+}
+
+.content-display h1, 
+.content-display h2, 
+.content-display h3, 
+.content-display h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.content-display h1 { font-size: 2rem; }
+.content-display h2 { font-size: 1.5rem; }
+.content-display h3 { font-size: 1.25rem; }
+.content-display h4 { font-size: 1.125rem; }
+
+.content-display ul,
+.content-display ol {
+    margin-bottom: 1.25rem;
+    padding-left: 2rem;
+}
+
+.content-display li {
+    margin-bottom: 0.625rem;
+}
+
+.content-display strong {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.content-display em {
+    font-style: italic;
+    color: #475569;
+}
+
+/* Prayer points styling */
+.prayer-points-content p {
+    margin-bottom: 1rem;
+}
+
+.prayer-points-content ul,
+.prayer-points-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.75rem;
+}
+
+.prayer-points-content li {
+    margin-bottom: 0.75rem;
+    line-height: 1.75;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .content-display {
+        font-size: 1rem !important;
+    }
+    
+    .content-display h1 { font-size: 1.75rem; }
+    .content-display h2 { font-size: 1.375rem; }
+    .content-display h3 { font-size: 1.125rem; }
 }
 
 .content-display p {
