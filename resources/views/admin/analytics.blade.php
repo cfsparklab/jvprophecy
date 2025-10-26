@@ -100,8 +100,8 @@
         
         <!-- Tab Content: Overview -->
         <div id="tab-overview" class="tab-content active" style="padding: var(--space-xl);">
-            <!-- KPI Cards -->
-            <div class="intel-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: var(--space-xl);">
+            <!-- KPI Cards Row 1 -->
+            <div class="intel-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: var(--space-lg);">
                 <div class="intel-stat-card">
                     <div class="intel-stat-header">
                         <div class="intel-stat-content">
@@ -114,6 +114,10 @@
                         <span class="metric-badge success">
                             <i class="fas fa-user-check"></i>
                             {{ number_format($analytics['users']['verified'] ?? 0) }} verified
+                        </span>
+                        <span class="metric-badge warning" style="margin-left: 0.5rem;">
+                            <i class="fas fa-user-times"></i>
+                            {{ number_format($analytics['users']['non_verified'] ?? 0) }} pending
                         </span>
                     </div>
                 </div>
@@ -128,7 +132,7 @@
                     <div class="intel-stat-footer">
                         <span class="metric-badge info">
                             <i class="fas fa-user"></i>
-                            {{ number_format($analytics['views']['unique'] ?? 0) }} unique
+                            {{ number_format($analytics['views']['unique'] ?? 0) }} unique visitors
                         </span>
                     </div>
                 </div>
@@ -141,23 +145,60 @@
                         <div class="intel-stat-icon blue"><i class="fas fa-download"></i></div>
                     </div>
                     <div class="intel-stat-footer">
-                        <span style="color: var(--intel-gray-600); font-size: 0.875rem;">
-                            <i class="fas fa-calendar-day"></i> Last 7 days
+                        @php($change7d = ($analytics['windows']['7d']['downloads'] ?? 0) - ($analytics['windows']['15d']['downloads'] ?? 0) / 2)
+                        <span style="color: {{ $change7d >= 0 ? 'var(--success-color)' : 'var(--error-color)' }}; font-size: 0.875rem; font-weight: 600;">
+                            <i class="fas fa-{{ $change7d >= 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                            {{ $change7d >= 0 ? '+' : '' }}{{ number_format(abs($change7d)) }} vs prev week
                         </span>
                     </div>
                 </div>
                 <div class="intel-stat-card">
                     <div class="intel-stat-header">
                         <div class="intel-stat-content">
-                            <h3>Active Sessions</h3>
+                            <h3>Today's Activity</h3>
                             <p class="value">{{ number_format($analytics['windows']['today']['logins'] ?? 0) }}</p>
                         </div>
-                        <div class="intel-stat-icon green"><i class="fas fa-sign-in-alt"></i></div>
+                        <div class="intel-stat-icon green"><i class="fas fa-chart-line"></i></div>
                     </div>
                     <div class="intel-stat-footer">
                         <span style="color: var(--intel-gray-600); font-size: 0.875rem;">
-                            <i class="fas fa-clock"></i> Today
+                            <i class="fas fa-sign-in-alt"></i> Active sessions today
                         </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards Row 2: Engagement Metrics -->
+            <div class="intel-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: var(--space-xl);">
+                <div class="intel-stat-card" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+                    <div style="padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.875rem; color: var(--intel-gray-700); font-weight: 600; margin-bottom: 0.5rem;">Views (30d)</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--intel-blue-700);">{{ number_format($analytics['windows']['30d']['views'] ?? 0) }}</div>
+                    </div>
+                </div>
+                <div class="intel-stat-card" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
+                    <div style="padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.875rem; color: var(--intel-gray-700); font-weight: 600; margin-bottom: 0.5rem;">Downloads (30d)</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #059669;">{{ number_format($analytics['windows']['30d']['downloads'] ?? 0) }}</div>
+                    </div>
+                </div>
+                <div class="intel-stat-card" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
+                    <div style="padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.875rem; color: var(--intel-gray-700); font-weight: 600; margin-bottom: 0.5rem;">Prints (30d)</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #d97706;">{{ number_format($analytics['windows']['30d']['prints'] ?? 0) }}</div>
+                    </div>
+                </div>
+                <div class="intel-stat-card" style="background: linear-gradient(135deg, #e0e7ff, #c7d2fe);">
+                    <div style="padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.875rem; color: var(--intel-gray-700); font-weight: 600; margin-bottom: 0.5rem;">Logins (30d)</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #4f46e5;">{{ number_format($analytics['windows']['30d']['logins'] ?? 0) }}</div>
+                    </div>
+                </div>
+                @php($totalEngagement = ($analytics['windows']['30d']['views'] ?? 0) + ($analytics['windows']['30d']['downloads'] ?? 0) + ($analytics['windows']['30d']['prints'] ?? 0))
+                <div class="intel-stat-card" style="background: linear-gradient(135deg, #f3e8ff, #e9d5ff);">
+                    <div style="padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.875rem; color: var(--intel-gray-700); font-weight: 600; margin-bottom: 0.5rem;">Total Engagement</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: #9333ea;">{{ number_format($totalEngagement) }}</div>
                     </div>
                 </div>
             </div>
