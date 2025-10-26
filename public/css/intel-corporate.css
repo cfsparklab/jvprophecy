@@ -94,10 +94,20 @@ body {
 .text-green-600 { color: #059669; }
 .text-red-600 { color: #dc2626; }
 
+/* Enhanced Shadows */
+:root {
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
 /* Intel Sidebar */
 .intel-sidebar {
     width: 16rem;
-    background: linear-gradient(180deg, var(--intel-gray-700) 0%, var(--intel-gray-800) 100%);
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     border-right: 1px solid var(--intel-gray-600);
     color: var(--intel-gray-300);
 }
@@ -105,24 +115,28 @@ body {
 .intel-nav-link {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.5rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    margin: 0.25rem 0.75rem;
     color: var(--intel-gray-300);
     text-decoration: none;
-    transition: all 0.2s ease-in-out;
-    border-left: 3px solid transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9375rem;
 }
 
 .intel-nav-link:hover {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgba(59, 130, 246, 0.12);
     color: #ffffff;
-    border-left-color: var(--intel-blue-500);
+    transform: translateX(2px);
 }
 
 .intel-nav-link.active {
-    background-color: rgba(59, 130, 246, 0.2);
+    background: linear-gradient(135deg, var(--intel-blue-600) 0%, var(--intel-blue-700) 100%);
     color: #ffffff;
-    border-left-color: var(--intel-blue-500);
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 /* Intel Content Area */
@@ -134,9 +148,18 @@ body {
 
 /* Intel Cards */
 .intel-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    background: white;
     border: 1px solid var(--intel-gray-200);
     border-radius: 0.75rem;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.intel-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
     padding: 1.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     transition: all 0.2s ease-in-out;
@@ -232,8 +255,8 @@ body {
 
 .intel-btn-primary:hover {
     background: linear-gradient(135deg, var(--intel-blue-700) 0%, var(--intel-blue-900) 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
 }
 
 .intel-btn-secondary {

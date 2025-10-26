@@ -56,10 +56,10 @@
                 Users
             </a>
             
-            <a href="#" 
-               class="intel-nav-link">
-                <i class="fas fa-shield-alt"></i>
-                Security Logs
+            <a href="{{ route('admin.analytics.index') }}" 
+               class="intel-nav-link {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
+                <i class="fas fa-chart-bar"></i>
+                Analytics
             </a>
             
             <!-- System Section -->
