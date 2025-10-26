@@ -4,346 +4,210 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prophecy;
-use App\Models\User;
 use App\Models\SecurityLog;
-use App\Models\ProphecyTranslation;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class AnalyticsController extends Controller
 {
     /**
-     * Display the analytics dashboard.
+     * Show analytics page.
      */
     public function index()
     {
-        // Get date range for analytics (last 30 days by default)
-        $startDate = Carbon::now()->subDays(30);
-        $endDate = Carbon::now();
-
-        // User Analytics
-        $userStats = [
-            'total_users' => User::count(),
-            'active_users' => User::where('status', 'active')->count(),
-            'new_users_this_month' => User::where('created_at', '>=', Carbon::now()->startOfMonth())->count(),
-            'users_by_role' => User::select('roles.name as role', DB::raw('count(*) as count'))
-                ->join('user_roles', 'users.id', '=', 'user_roles.user_id')
-                ->join('roles', 'user_roles.role_id', '=', 'roles.id')
-                ->groupBy('roles.name')
-                ->get(),
-        ];
-
-        // Prophecy Analytics
-        $prophecyStats = [
-            'total_prophecies' => Prophecy::count(),
-            'published_prophecies' => Prophecy::where('status', 'published')->count(),
-            'draft_prophecies' => Prophecy::where('status', 'draft')->count(),
-            'prophecies_by_category' => Prophecy::select('categories.name as category', DB::raw('count(*) as count'))
-                ->join('categories', 'prophecies.category_id', '=', 'categories.id')
-                ->groupBy('categories.name')
-                ->get(),
-            'prophecies_by_month' => Prophecy::select(
-                    DB::raw('YEAR(created_at) as year'),
-                    DB::raw('MONTH(created_at) as month'),
-                    DB::raw('count(*) as count')
-                )
-                ->where('created_at', '>=', $startDate)
-                ->groupBy('year', 'month')
-                ->orderBy('year', 'desc')
-                ->orderBy('month', 'desc')
-                ->get(),
-        ];
-
-        // Translation Analytics
-        $translationStats = [
-            'total_translations' => ProphecyTranslation::count(),
-            'translations_by_language' => ProphecyTranslation::select('language', DB::raw('count(*) as count'))
-                ->groupBy('language')
-                ->get(),
-            'completion_rate' => $this->getTranslationCompletionRate(),
-        ];
-
-        // Activity Analytics
-        $activityStats = [
-            'total_views' => SecurityLog::where('event_type', 'prophecy_view')->count(),
-            'total_downloads' => SecurityLog::where('event_type', 'prophecy_download')->count(),
-            'total_prints' => SecurityLog::where('event_type', 'prophecy_print')->count(),
-            'recent_activities' => SecurityLog::with('user')
-                ->orderBy('created_at', 'desc')
-                ->limit(10)
-                ->get(),
-            'activity_by_day' => SecurityLog::select(
-                    DB::raw('DATE(created_at) as date'),
-                    DB::raw('count(*) as count')
-                )
-                ->where('created_at', '>=', $startDate)
-                ->groupBy('date')
-                ->orderBy('date', 'desc')
-                ->get(),
-        ];
-
-        // Performance Metrics
-        $performanceStats = [
-            'avg_prophecy_views' => round(SecurityLog::where('event_type', 'prophecy_view')->count() / max(Prophecy::count(), 1), 2),
-            'most_viewed_prophecies' => $this->getMostViewedProphecies(),
-            'most_downloaded_prophecies' => $this->getMostDownloadedProphecies(),
-            'popular_languages' => $this->getPopularLanguages(),
-        ];
-
-        return view('admin.analytics.index', compact(
-            'userStats',
-            'prophecyStats', 
-            'translationStats',
-            'activityStats',
-            'performanceStats',
-            'startDate',
-            'endDate'
-        ));
+        $analytics = $this->getAnalytics();
+        return view('admin.analytics', compact('analytics'));
     }
 
     /**
-     * Export analytics data.
+     * Optional CSV export for specific dataset (fallback to client-side exports).
      */
-    public function export(Request $request)
+    public function export()
     {
-        $format = $request->get('format', 'csv');
-        $type = $request->get('type', 'summary');
+        $type = request('type');
+        $filename = 'analytics-export-' . ($type ?: 'data') . '-' . now()->format('Ymd_His') . '.csv';
 
+        $rows = [];
         switch ($type) {
-            case 'users':
-                return $this->exportUsers($format);
-            case 'prophecies':
-                return $this->exportProphecies($format);
-            case 'activities':
-                return $this->exportActivities($format);
-            default:
-                return $this->exportSummary($format);
-        }
-    }
-
-    /**
-     * Get translation completion rate.
-     */
-    private function getTranslationCompletionRate()
-    {
-        $totalProphecies = Prophecy::count();
-        $languages = ['en', 'ta', 'kn', 'te', 'ml', 'hi'];
-        $expectedTranslations = $totalProphecies * count($languages);
-        $actualTranslations = ProphecyTranslation::count();
-        
-        return $expectedTranslations > 0 ? round(($actualTranslations / $expectedTranslations) * 100, 2) : 0;
-    }
-
-    /**
-     * Get most viewed prophecies.
-     */
-    private function getMostViewedProphecies()
-    {
-        return SecurityLog::select('prophecies.title', DB::raw('count(*) as views'))
-            ->join('prophecies', 'security_logs.metadata->prophecy_id', '=', 'prophecies.id')
-            ->where('event_type', 'prophecy_view')
-            ->groupBy('prophecies.id', 'prophecies.title')
-            ->orderBy('views', 'desc')
-            ->limit(5)
-            ->get();
-    }
-
-    /**
-     * Get most downloaded prophecies.
-     */
-    private function getMostDownloadedProphecies()
-    {
-        return SecurityLog::select('prophecies.title', DB::raw('count(*) as downloads'))
-            ->join('prophecies', 'security_logs.metadata->prophecy_id', '=', 'prophecies.id')
-            ->where('event_type', 'prophecy_download')
-            ->groupBy('prophecies.id', 'prophecies.title')
-            ->orderBy('downloads', 'desc')
-            ->limit(5)
-            ->get();
-    }
-
-    /**
-     * Get popular languages.
-     */
-    private function getPopularLanguages()
-    {
-        return SecurityLog::select('metadata->language as language', DB::raw('count(*) as usage'))
-            ->whereIn('event_type', ['prophecy_view', 'prophecy_download'])
-            ->whereNotNull('metadata->language')
-            ->groupBy('language')
-            ->orderBy('usage', 'desc')
-            ->get();
-    }
-
-    /**
-     * Export users data.
-     */
-    private function exportUsers($format)
-    {
-        $users = User::with('roles')->get();
-        
-        if ($format === 'json') {
-            return response()->json($users);
-        }
-
-        // CSV export
-        $filename = 'users_export_' . date('Y-m-d_H-i-s') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($users) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['ID', 'Name', 'Email', 'Mobile', 'Status', 'Roles', 'Created At']);
-            
-            foreach ($users as $user) {
-                fputcsv($file, [
-                    $user->id,
-                    $user->name,
-                    $user->email,
-                    $user->mobile,
-                    $user->status,
-                    $user->roles->pluck('name')->implode(', '),
-                    $user->created_at->format('Y-m-d H:i:s'),
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Export prophecies data.
-     */
-    private function exportProphecies($format)
-    {
-        $prophecies = Prophecy::with(['category', 'creator', 'translations'])->get();
-        
-        if ($format === 'json') {
-            return response()->json($prophecies);
-        }
-
-        // CSV export
-        $filename = 'prophecies_export_' . date('Y-m-d_H-i-s') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($prophecies) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['ID', 'Title', 'Category', 'Status', 'Visibility', 'Jebikalam Vaanga Date', 'Translations', 'Created At']);
-            
-            foreach ($prophecies as $prophecy) {
-                fputcsv($file, [
-                    $prophecy->id,
-                    $prophecy->title,
-                    $prophecy->category?->name,
-                    $prophecy->status,
-                    $prophecy->visibility,
-                    $prophecy->jebikalam_vanga_date?->format('d/m/Y'),
-                    $prophecy->translations->count(),
-                    $prophecy->created_at->format('Y-m-d H:i:s'),
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Export activities data.
-     */
-    private function exportActivities($format)
-    {
-        $activities = SecurityLog::with('user')->orderBy('created_at', 'desc')->limit(1000)->get();
-        
-        if ($format === 'json') {
-            return response()->json($activities);
-        }
-
-        // CSV export
-        $filename = 'activities_export_' . date('Y-m-d_H-i-s') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($activities) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['ID', 'Event Type', 'User', 'IP Address', 'Severity', 'Description', 'Created At']);
-            
-            foreach ($activities as $activity) {
-                fputcsv($file, [
-                    $activity->id,
-                    $activity->event_type,
-                    $activity->user?->name ?? 'Guest',
-                    $activity->ip_address,
-                    $activity->severity,
-                    $activity->description,
-                    $activity->created_at->format('Y-m-d H:i:s'),
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Export summary data.
-     */
-    private function exportSummary($format)
-    {
-        $summary = [
-            'users' => [
-                'total' => User::count(),
-                'active' => User::where('status', 'active')->count(),
-                'new_this_month' => User::where('created_at', '>=', Carbon::now()->startOfMonth())->count(),
-            ],
-            'prophecies' => [
-                'total' => Prophecy::count(),
-                'published' => Prophecy::where('status', 'published')->count(),
-                'draft' => Prophecy::where('status', 'draft')->count(),
-            ],
-            'translations' => [
-                'total' => ProphecyTranslation::count(),
-                'completion_rate' => $this->getTranslationCompletionRate(),
-            ],
-            'activities' => [
-                'total_views' => SecurityLog::where('event_type', 'prophecy_view')->count(),
-                'total_downloads' => SecurityLog::where('event_type', 'prophecy_download')->count(),
-                'total_prints' => SecurityLog::where('event_type', 'prophecy_print')->count(),
-            ],
-        ];
-
-        if ($format === 'json') {
-            return response()->json($summary);
-        }
-
-        // CSV export for summary
-        $filename = 'analytics_summary_' . date('Y-m-d_H-i-s') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($summary) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['Category', 'Metric', 'Value']);
-            
-            foreach ($summary as $category => $metrics) {
-                foreach ($metrics as $metric => $value) {
-                    fputcsv($file, [ucfirst($category), ucfirst(str_replace('_', ' ', $metric)), $value]);
+            case 'windows':
+                $win = $this->getAnalytics()['windows'];
+                $rows[] = ['Window', 'Logins', 'Downloads', 'Views', 'Prints'];
+                foreach ($win as $w) {
+                    $rows[] = [$w['label'], $w['logins'], $w['downloads'], $w['views'], $w['prints']];
                 }
-            }
-            fclose($file);
-        };
+                break;
+            case 'logins_by_user':
+                $rows[] = ['User ID', 'Name', 'Email', 'Logins'];
+                foreach ($this->aggregatePerUser(['login_success', 'login'], 1000) as $r) {
+                    $rows[] = [$r['user_id'], $r['name'], $r['email'], $r['total']];
+                }
+                break;
+            case 'downloads_by_user':
+                $rows[] = ['User ID', 'Name', 'Email', 'Downloads'];
+                foreach ($this->aggregatePerUser(['prophecy_pdf_download', 'prophecy_download'], 1000) as $r) {
+                    $rows[] = [$r['user_id'], $r['name'], $r['email'], $r['total']];
+                }
+                break;
+            case 'views_by_user':
+                $rows[] = ['User ID', 'Name', 'Email', 'Views'];
+                foreach ($this->aggregatePerUser(['prophecy_view'], 1000) as $r) {
+                    $rows[] = [$r['user_id'], $r['name'], $r['email'], $r['total']];
+                }
+                break;
+            case 'top_downloads':
+                $rows[] = ['Prophecy ID', 'Title', 'Downloads', 'View Count', 'Download Count', 'Print Count'];
+                foreach ($this->topPropheciesByEvents(['prophecy_pdf_download', 'prophecy_download'], 1000) as $r) {
+                    $rows[] = [$r['prophecy_id'], $r['title'], $r['total'], $r['view_count'], $r['download_count'], $r['print_count']];
+                }
+                break;
+            case 'top_views':
+                $rows[] = ['Prophecy ID', 'Title', 'Views', 'View Count', 'Download Count', 'Print Count'];
+                foreach ($this->topPropheciesByEvents(['prophecy_view'], 1000) as $r) {
+                    $rows[] = [$r['prophecy_id'], $r['title'], $r['total'], $r['view_count'], $r['download_count'], $r['print_count']];
+                }
+                break;
+            case 'top_prints':
+                $rows[] = ['Prophecy ID', 'Title', 'Prints', 'View Count', 'Download Count', 'Print Count'];
+                foreach ($this->topPropheciesByEvents(['prophecy_print'], 1000) as $r) {
+                    $rows[] = [$r['prophecy_id'], $r['title'], $r['total'], $r['view_count'], $r['download_count'], $r['print_count']];
+                }
+                break;
+            default:
+                $rows[] = ['Unsupported type'];
+        }
 
-        return response()->stream($callback, 200, $headers);
+        $handle = fopen('php://temp', 'r+');
+        foreach ($rows as $row) {
+            fputcsv($handle, $row);
+        }
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=' . $filename,
+        ]);
+    }
+
+    private function getAnalytics()
+    {
+        $windows = [
+            ['key' => 'today', 'label' => 'Today', 'start' => now()->startOfDay()],
+            ['key' => '24h', 'label' => 'Last 24h', 'start' => now()->copy()->subHours(24)],
+            ['key' => '48h', 'label' => 'Last 48h', 'start' => now()->copy()->subHours(48)],
+            ['key' => '72h', 'label' => 'Last 72h', 'start' => now()->copy()->subHours(72)],
+            ['key' => '7d', 'label' => 'Last 7 Days', 'start' => now()->copy()->subDays(7)],
+            ['key' => '15d', 'label' => 'Last 15 Days', 'start' => now()->copy()->subDays(15)],
+            ['key' => '30d', 'label' => 'Last 30 Days', 'start' => now()->copy()->subDays(30)],
+        ];
+
+        $eventSets = [
+            'logins' => ['login_success', 'login'],
+            'downloads' => ['prophecy_pdf_download', 'prophecy_download'],
+            'views' => ['prophecy_view'],
+            'prints' => ['prophecy_print'],
+        ];
+
+        $byWindow = [];
+        foreach ($windows as $w) {
+            $row = ['label' => $w['label']];
+            foreach ($eventSets as $key => $types) {
+                $row[$key] = SecurityLog::whereIn('event_type', $types)
+                    ->where('event_time', '>=', $w['start'])
+                    ->count();
+            }
+            $byWindow[$w['key']] = $row;
+        }
+
+        $totalUsers = User::count();
+        $verifiedUsers = User::whereNotNull('email_verified_at')->where('is_active', true)->count();
+        $nonVerifiedUsers = max(0, $totalUsers - $verifiedUsers);
+
+        $perUser = [
+            'logins' => $this->aggregatePerUser(['login_success', 'login'], 50),
+            'downloads' => $this->aggregatePerUser(['prophecy_pdf_download', 'prophecy_download'], 50),
+            'views' => $this->aggregatePerUser(['prophecy_view'], 50),
+        ];
+
+        $top = [
+            'downloads' => $this->topPropheciesByEvents(['prophecy_pdf_download', 'prophecy_download'], 5),
+            'views' => $this->topPropheciesByEvents(['prophecy_view'], 5),
+            'prints' => $this->topPropheciesByEvents(['prophecy_print'], 5),
+        ];
+
+        $totalViews = SecurityLog::where('event_type', 'prophecy_view')->count();
+        $uniqueKeys = SecurityLog::where('event_type', 'prophecy_view')
+            ->get(['user_id', 'ip_address', 'user_agent'])
+            ->map(function ($log) {
+                if (!empty($log->user_id)) {
+                    return 'u:' . $log->user_id;
+                }
+                return 'g:' . ($log->ip_address ?: '0.0.0.0') . '|' . substr((string)$log->user_agent, 0, 120);
+            })
+            ->unique()
+            ->count();
+
+        return [
+            'users' => [
+                'total' => $totalUsers,
+                'verified' => $verifiedUsers,
+                'non_verified' => $nonVerifiedUsers,
+            ],
+            'windows' => $byWindow,
+            'per_user' => $perUser,
+            'top_prophecies' => $top,
+            'views' => [
+                'total' => $totalViews,
+                'unique' => $uniqueKeys,
+            ],
+        ];
+    }
+
+    private function aggregatePerUser(array $eventTypes, int $limit = 50)
+    {
+        return SecurityLog::select('user_id', DB::raw('COUNT(*) as total'))
+            ->whereIn('event_type', $eventTypes)
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get()
+            ->map(function ($row) {
+                $user = User::find($row->user_id);
+                return [
+                    'user_id' => $row->user_id,
+                    'name' => $user?->name ?? 'Unknown',
+                    'email' => $user?->email ?? null,
+                    'total' => (int) $row->total,
+                ];
+            });
+    }
+
+    private function topPropheciesByEvents(array $eventTypes, int $limit = 5)
+    {
+        $rows = SecurityLog::select('resource_id', DB::raw('COUNT(*) as total'))
+            ->whereIn('event_type', $eventTypes)
+            ->where('resource_type', 'prophecy')
+            ->whereNotNull('resource_id')
+            ->groupBy('resource_id')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get();
+
+        $prophecyIds = $rows->pluck('resource_id')->all();
+        $prophecies = Prophecy::whereIn('id', $prophecyIds)->get(['id', 'title', 'view_count', 'download_count', 'print_count']);
+
+        return $rows->map(function ($row) use ($prophecies) {
+            $p = $prophecies->firstWhere('id', $row->resource_id);
+            return [
+                'prophecy_id' => $row->resource_id,
+                'title' => $p?->title ?? ('#' . $row->resource_id),
+                'total' => (int) $row->total,
+                'view_count' => $p?->view_count ?? 0,
+                'download_count' => $p?->download_count ?? 0,
+                'print_count' => $p?->print_count ?? 0,
+            ];
+        });
     }
 }
