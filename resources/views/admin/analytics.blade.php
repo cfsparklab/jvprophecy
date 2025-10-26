@@ -244,49 +244,68 @@
 
         <!-- Tab Content: Users -->
         <div id="tab-users" class="tab-content" style="padding: var(--space-xl); display: none;">
-            <h2 style="margin: 0 0 var(--space-lg) 0; font-size: 1.25rem;">User Activity Breakdown</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-xl);">
+            <div style="margin-bottom: var(--space-xl);">
+                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">User Activity Breakdown</h2>
+                <p style="margin: 0; color: var(--intel-gray-600);">Detailed per-user activity metrics showing engagement patterns</p>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: var(--space-xl);">
                 @php($sets = [
-                    ['key' => 'logins', 'title' => 'Logins by User', 'icon' => 'sign-in-alt', 'export' => route('admin.analytics.export', ['type' => 'logins_by_user'])],
-                    ['key' => 'downloads', 'title' => 'Downloads by User', 'icon' => 'download', 'export' => route('admin.analytics.export', ['type' => 'downloads_by_user'])],
-                    ['key' => 'views', 'title' => 'Views by User', 'icon' => 'eye', 'export' => route('admin.analytics.export', ['type' => 'views_by_user'])],
+                    ['key' => 'logins', 'title' => 'Logins by User', 'icon' => 'sign-in-alt', 'color' => 'blue', 'export' => route('admin.analytics.export', ['type' => 'logins_by_user'])],
+                    ['key' => 'downloads', 'title' => 'Downloads by User', 'icon' => 'download', 'color' => 'green', 'export' => route('admin.analytics.export', ['type' => 'downloads_by_user'])],
+                    ['key' => 'views', 'title' => 'Views by User', 'icon' => 'eye', 'color' => 'yellow', 'export' => route('admin.analytics.export', ['type' => 'views_by_user'])],
                 ])
                 @foreach($sets as $set)
                 <div class="intel-card">
-                    <div class="intel-card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; font-size: 1rem;">
-                            <i class="fas fa-{{ $set['icon'] }}"></i> {{ $set['title'] }}
-                        </h3>
-                        <a class="intel-btn intel-btn-secondary intel-btn-sm" href="{{ $set['export'] }}">
-                            <i class="fas fa-file-excel"></i>
+                    <div class="intel-card-header" style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-lg); background: linear-gradient(135deg, var(--intel-{{ $set['color'] }}-50), var(--intel-{{ $set['color'] }}-100)); border-bottom: 2px solid var(--intel-{{ $set['color'] }}-200);">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--intel-gray-900);">
+                                <i class="fas fa-{{ $set['icon'] }}" style="color: var(--intel-{{ $set['color'] }}-600);"></i> {{ $set['title'] }}
+                            </h3>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--intel-gray-600);">Top 50 users by activity</p>
+                        </div>
+                        <a class="intel-btn intel-btn-secondary intel-btn-sm" href="{{ $set['export'] }}" title="Export to Excel">
+                            <i class="fas fa-file-excel"></i> Export
                         </a>
                     </div>
-                    <div class="intel-card-body" style="max-height: 480px; overflow-y: auto;">
+                    <div class="intel-card-body" style="padding: 0; max-height: 560px; overflow-y: auto;">
                         @php($items = $analytics['per_user'][$set['key']] ?? collect())
                         @if($items && count($items) > 0)
-                            <table class="intel-table" style="width: 100%;">
-                                <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                            <table class="intel-table" style="width: 100%; margin: 0;">
+                                <thead style="position: sticky; top: 0; background: white; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                                     <tr>
-                                        <th style="text-align: left;">User</th>
-                                        <th style="text-align: right;">Count</th>
+                                        <th style="text-align: left; padding: 1rem;">User Details</th>
+                                        <th style="text-align: right; padding: 1rem;">Activity Count</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($items as $it)
-                                    <tr>
-                                        <td>
-                                            <div style="font-weight: 600;">{{ $it['name'] }}</div>
-                                            <div style="color: var(--intel-gray-500); font-size: 0.75rem;">{{ $it['email'] }}</div>
+                                    @foreach($items as $idx => $it)
+                                    <tr style="border-bottom: 1px solid var(--intel-gray-100);">
+                                        <td style="padding: 1rem;">
+                                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                                <div style="flex-shrink: 0; width: 36px; height: 36px; background: linear-gradient(135deg, var(--intel-{{ $set['color'] }}-500), var(--intel-{{ $set['color'] }}-600)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">
+                                                    {{ substr($it['name'], 0, 1) }}
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 600; color: var(--intel-gray-900);">{{ $it['name'] }}</div>
+                                                    <div style="color: var(--intel-gray-500); font-size: 0.8125rem;">{{ $it['email'] }}</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td style="text-align: right;">
-                                            <span class="metric-badge info">{{ number_format($it['total']) }}</span>
+                                        <td style="text-align: right; padding: 1rem;">
+                                            <span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--intel-{{ $set['color'] }}-50); color: var(--intel-{{ $set['color'] }}-700); border-radius: var(--radius-md); font-weight: 600;">
+                                                <i class="fas fa-{{ $set['icon'] }}"></i>
+                                                {{ number_format($it['total']) }}
+                                            </span>
                                         </td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         @else
-                            <p style="color: var(--intel-gray-500); text-align: center; padding: var(--space-xl);">No data available</p>
+                            <div style="text-align: center; padding: var(--space-xl); color: var(--intel-gray-500);">
+                                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: var(--space-md); opacity: 0.3;"></i>
+                                <p style="margin: 0; font-weight: 500;">No activity data available</p>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -296,8 +315,11 @@
 
         <!-- Tab Content: Content -->
         <div id="tab-content" class="tab-content" style="padding: var(--space-xl); display: none;">
-            <h2 style="margin: 0 0 var(--space-lg) 0; font-size: 1.25rem;">Top Performing Content</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-xl);">
+            <div style="margin-bottom: var(--space-xl);">
+                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700;">Top Performing Content</h2>
+                <p style="margin: 0; color: var(--intel-gray-600);">Most popular prophecies ranked by user engagement metrics</p>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--space-xl);">
                 @php($tops = [
                     ['key' => 'downloads', 'title' => 'Top 5 by Downloads', 'icon' => 'download', 'color' => 'blue', 'export' => route('admin.analytics.export', ['type' => 'top_downloads'])],
                     ['key' => 'views', 'title' => 'Top 5 by Views', 'icon' => 'eye', 'color' => 'yellow', 'export' => route('admin.analytics.export', ['type' => 'top_views'])],
@@ -305,36 +327,50 @@
                 ])
                 @foreach($tops as $t)
                 <div class="intel-card">
-                    <div class="intel-card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; font-size: 1rem;">
-                            <i class="fas fa-{{ $t['icon'] }}"></i> {{ $t['title'] }}
-                        </h3>
-                        <a class="intel-btn intel-btn-secondary intel-btn-sm" href="{{ $t['export'] }}">
-                            <i class="fas fa-file-excel"></i>
+                    <div class="intel-card-header" style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-lg); background: linear-gradient(135deg, var(--intel-{{ $t['color'] }}-50), var(--intel-{{ $t['color'] }}-100)); border-bottom: 2px solid var(--intel-{{ $t['color'] }}-200);">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--intel-gray-900);">
+                                <i class="fas fa-{{ $t['icon'] }}" style="color: var(--intel-{{ $t['color'] }}-600);"></i> {{ $t['title'] }}
+                            </h3>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--intel-gray-600);">Most {{ strtolower($t['key']) }} content</p>
+                        </div>
+                        <a class="intel-btn intel-btn-secondary intel-btn-sm" href="{{ $t['export'] }}" title="Export to Excel">
+                            <i class="fas fa-file-excel"></i> Export
                         </a>
                     </div>
-                    <div class="intel-card-body">
+                    <div class="intel-card-body" style="padding: var(--space-lg);">
                         @php($items = $analytics['top_prophecies'][$t['key']] ?? collect())
                         @if($items && count($items) > 0)
-                            <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                            <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
                                 @foreach($items as $idx => $it)
-                                <div style="display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md); background: var(--intel-gray-50); border-radius: var(--radius-md);">
-                                    <div style="flex-shrink: 0; width: 40px; height: 40px; background: linear-gradient(135deg, var(--intel-{{ $t['color'] }}-500), var(--intel-{{ $t['color'] }}-600)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.125rem;">
+                                <div style="display: flex; align-items: center; gap: var(--space-lg); padding: var(--space-lg); background: linear-gradient(135deg, var(--intel-gray-50), white); border-radius: var(--radius-lg); border: 1px solid var(--intel-gray-200); transition: all 0.2s;">
+                                    <div style="flex-shrink: 0; width: 56px; height: 56px; background: linear-gradient(135deg, var(--intel-{{ $t['color'] }}-500), var(--intel-{{ $t['color'] }}-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                                         {{ $idx + 1 }}
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
-                                        <div style="font-weight: 600; color: var(--intel-gray-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $it['title'] }}</div>
-                                        <div style="color: var(--intel-gray-500); font-size: 0.75rem;">ID: {{ $it['prophecy_id'] }}</div>
+                                        <div style="font-weight: 600; font-size: 1rem; color: var(--intel-gray-900); margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ $it['title'] }}
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; font-size: 0.8125rem; color: var(--intel-gray-600);">
+                                            <span><i class="fas fa-hashtag"></i> ID: {{ $it['prophecy_id'] }}</span>
+                                            <span><i class="fas fa-eye"></i> {{ number_format($it['view_count']) }}</span>
+                                            <span><i class="fas fa-download"></i> {{ number_format($it['download_count']) }}</span>
+                                        </div>
                                     </div>
                                     <div style="text-align: right;">
-                                        <div style="font-weight: 700; font-size: 1.25rem; color: var(--intel-gray-900);">{{ number_format($it['total']) }}</div>
-                                        <div style="font-size: 0.75rem; color: var(--intel-gray-500);">{{ ucfirst($t['key']) }}</div>
+                                        <div style="padding: 0.5rem 1rem; background: white; border: 2px solid var(--intel-{{ $t['color'] }}-200); border-radius: var(--radius-md); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                            <div style="font-weight: 700; font-size: 1.5rem; color: var(--intel-{{ $t['color'] }}-600); line-height: 1;">{{ number_format($it['total']) }}</div>
+                                            <div style="font-size: 0.75rem; color: var(--intel-gray-600); margin-top: 0.125rem; text-transform: uppercase; letter-spacing: 0.025em;">{{ ucfirst($t['key']) }}</div>
+                                        </div>
                                     </div>
                                 </div>
                                 @endforeach
                             </div>
                         @else
-                            <p style="color: var(--intel-gray-500); text-align: center; padding: var(--space-xl);">No data available</p>
+                            <div style="text-align: center; padding: var(--space-xl); color: var(--intel-gray-500);">
+                                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: var(--space-md); opacity: 0.3;"></i>
+                                <p style="margin: 0; font-weight: 500;">No content data available</p>
+                            </div>
                         @endif
                     </div>
                 </div>

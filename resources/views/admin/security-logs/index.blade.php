@@ -258,159 +258,101 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Sample Security Log 1 -->
+                        @forelse($logs as $log)
                         <tr>
                             <td>
-                                <input type="checkbox" name="log_ids[]" value="1" class="log-checkbox">
+                                <input type="checkbox" name="log_ids[]" value="{{ $log->id }}" class="log-checkbox">
                             </td>
                             <td>
-                                <div style="font-weight: 600; color: var(--intel-gray-900);">08/09/2025</div>
-                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">14:32:15</div>
+                                <div style="font-weight: 600; color: var(--intel-gray-900);">{{ $log->created_at->format('d/m/Y') }}</div>
+                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">{{ $log->created_at->format('H:i:s') }}</div>
                             </td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                                    <i class="fas fa-sign-in-alt text-blue-600"></i>
+                                    <i class="{{ $log->event_icon }} {{ 
+                                        $log->severity === 'critical' || $log->severity === 'high' ? 'text-red-600' : 
+                                        ($log->severity === 'medium' ? 'text-yellow-600' : 'text-blue-600') 
+                                    }}"></i>
                                     <div>
-                                        <div style="font-weight: 600; color: var(--intel-gray-900);">User Login</div>
-                                        <div style="font-size: 0.875rem; color: var(--intel-gray-600);">Successful authentication</div>
+                                        <div style="font-weight: 600; color: var(--intel-gray-900);">{{ ucwords(str_replace('_', ' ', $log->event_type)) }}</div>
+                                        <div style="font-size: 0.875rem; color: var(--intel-gray-600);">{{ Str::limit($log->metadata['prophecy_title'] ?? $log->metadata['reason'] ?? 'System event', 40) }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                <span class="intel-badge intel-badge-success">
-                                    <i class="fas fa-check"></i>Low
+                                <span class="intel-badge intel-badge-{{ 
+                                    $log->severity === 'critical' ? 'error' : 
+                                    ($log->severity === 'high' ? 'error' : 
+                                    ($log->severity === 'medium' ? 'warning' : 'success')) 
+                                }}">
+                                    <i class="fas fa-{{ 
+                                        $log->severity === 'critical' ? 'exclamation-circle' : 
+                                        ($log->severity === 'high' ? 'exclamation-triangle' : 
+                                        ($log->severity === 'medium' ? 'exclamation' : 'check')) 
+                                    }}"></i>{{ ucfirst($log->severity) }}
                                 </span>
                             </td>
                             <td>
-                                <div style="font-weight: 600; color: var(--intel-gray-900);">John Doe</div>
-                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">john.doe@example.com</div>
+                                @if($log->user)
+                                    <div style="font-weight: 600; color: var(--intel-gray-900);">{{ $log->user->name }}</div>
+                                    <div style="font-size: 0.875rem; color: var(--intel-gray-600);">{{ $log->user->email }}</div>
+                                @else
+                                    <div style="font-weight: 600; color: var(--intel-gray-500);">Guest</div>
+                                    <div style="font-size: 0.875rem; color: var(--intel-gray-400);">Unauthenticated</div>
+                                @endif
                             </td>
                             <td>
-                                <code style="background: var(--intel-gray-100); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); font-size: 0.875rem;">192.168.1.100</code>
+                                <code style="background: var(--intel-gray-100); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); font-size: 0.875rem;">{{ $log->ip_address }}</code>
                             </td>
                             <td>
-                                <span class="intel-badge intel-badge-success">
-                                    <i class="fas fa-check"></i>Reviewed
-                                </span>
+                                @if($log->is_reviewed ?? false)
+                                    <span class="intel-badge intel-badge-success">
+                                        <i class="fas fa-check"></i>Reviewed
+                                    </span>
+                                @else
+                                    <span class="intel-badge intel-badge-warning">
+                                        <i class="fas fa-clock"></i>Pending
+                                    </span>
+                                @endif
                             </td>
                             <td>
                                 <div style="display: flex; gap: var(--space-xs);">
-                                    <button type="button" class="intel-btn intel-btn-secondary intel-btn-sm" onclick="viewLog(1)">
+                                    <button type="button" class="intel-btn intel-btn-secondary intel-btn-sm" onclick="viewLog({{ $log->id }})" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button type="button" class="intel-btn intel-btn-success intel-btn-sm" onclick="markReviewed(1)">
+                                    @if(!($log->is_reviewed ?? false))
+                                    <button type="button" class="intel-btn intel-btn-success intel-btn-sm" onclick="markReviewed({{ $log->id }})" title="Mark as Reviewed">
                                         <i class="fas fa-check"></i>
                                     </button>
-                                    <button type="button" class="intel-btn intel-btn-danger intel-btn-sm" onclick="deleteLog(1)">
+                                    @endif
+                                    <button type="button" class="intel-btn intel-btn-danger intel-btn-sm" onclick="deleteLog({{ $log->id }})" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                        
-                        <!-- Sample Security Log 2 -->
+                        @empty
                         <tr>
-                            <td>
-                                <input type="checkbox" name="log_ids[]" value="2" class="log-checkbox">
-                            </td>
-                            <td>
-                                <div style="font-weight: 600; color: var(--intel-gray-900);">08/09/2025</div>
-                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">14:28:42</div>
-                            </td>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                                    <i class="fas fa-times-circle text-red-600"></i>
-                                    <div>
-                                        <div style="font-weight: 600; color: var(--intel-gray-900);">Failed Login</div>
-                                        <div style="font-size: 0.875rem; color: var(--intel-gray-600);">Invalid credentials</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="intel-badge intel-badge-warning">
-                                    <i class="fas fa-exclamation-triangle"></i>Medium
-                                </span>
-                            </td>
-                            <td>
-                                <div style="font-weight: 600; color: var(--intel-gray-900);">Unknown</div>
-                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">admin@example.com</div>
-                            </td>
-                            <td>
-                                <code style="background: var(--intel-gray-100); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); font-size: 0.875rem;">203.0.113.45</code>
-                            </td>
-                            <td>
-                                <span class="intel-badge intel-badge-warning">
-                                    <i class="fas fa-clock"></i>Pending
-                                </span>
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: var(--space-xs);">
-                                    <button type="button" class="intel-btn intel-btn-secondary intel-btn-sm" onclick="viewLog(2)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button type="button" class="intel-btn intel-btn-success intel-btn-sm" onclick="markReviewed(2)">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button type="button" class="intel-btn intel-btn-danger intel-btn-sm" onclick="deleteLog(2)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                            <td colspan="8" style="text-align: center; padding: var(--space-xl); color: var(--intel-gray-500);">
+                                <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: var(--space-md); opacity: 0.5;"></i>
+                                <p style="margin: 0;">No security logs found matching your criteria.</p>
                             </td>
                         </tr>
-                        
-                        <!-- Sample Security Log 3 -->
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="log_ids[]" value="3" class="log-checkbox">
-                            </td>
-                            <td>
-                                <div style="font-weight: 600; color: var(--intel-gray-900);">08/09/2025</div>
-                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">14:15:33</div>
-                            </td>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                                    <i class="fas fa-ban text-red-600"></i>
-                                    <div>
-                                        <div style="font-weight: 600; color: var(--intel-gray-900);">Permission Denied</div>
-                                        <div style="font-size: 0.875rem; color: var(--intel-gray-600);">Unauthorized access attempt</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="intel-badge intel-badge-error">
-                                    <i class="fas fa-exclamation-circle"></i>High
-                                </span>
-                            </td>
-                            <td>
-                                <div style="font-weight: 600; color: var(--intel-gray-900);">Jane Smith</div>
-                                <div style="font-size: 0.875rem; color: var(--intel-gray-600);">jane.smith@example.com</div>
-                            </td>
-                            <td>
-                                <code style="background: var(--intel-gray-100); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); font-size: 0.875rem;">192.168.1.105</code>
-                            </td>
-                            <td>
-                                <span class="intel-badge intel-badge-warning">
-                                    <i class="fas fa-clock"></i>Pending
-                                </span>
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: var(--space-xs);">
-                                    <button type="button" class="intel-btn intel-btn-secondary intel-btn-sm" onclick="viewLog(3)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button type="button" class="intel-btn intel-btn-success intel-btn-sm" onclick="markReviewed(3)">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button type="button" class="intel-btn intel-btn-danger intel-btn-sm" onclick="deleteLog(3)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
+        @if($logs->hasPages())
+        <div class="intel-card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: var(--intel-gray-600); font-size: 0.875rem;">
+                Showing {{ $logs->firstItem() }} to {{ $logs->lastItem() }} of {{ $logs->total() }} results
+            </div>
+            <div>
+                {{ $logs->links() }}
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 
