@@ -253,5 +253,227 @@
             </div>
         </div>
     </div>
+
+    <!-- Analytics & Insights -->
+    <div class="intel-card">
+        <div class="intel-card-header">
+            <h2 class="intel-card-title">
+                <i class="fas fa-chart-line"></i>
+                Analytics & Insights
+            </h2>
+            <p class="intel-card-subtitle">Usage metrics, top content, and user activity</p>
+        </div>
+        <div class="intel-card-body" style="display: flex; flex-direction: column; gap: var(--space-xl);">
+            <!-- Quick KPIs -->
+            <div class="intel-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                <div class="intel-stat-card">
+                    <div class="intel-stat-header">
+                        <div class="intel-stat-content">
+                            <h3>Total Users</h3>
+                            <p class="value">{{ number_format($analytics['users']['total'] ?? 0) }}</p>
+                        </div>
+                        <div class="intel-stat-icon green"><i class="fas fa-users"></i></div>
+                    </div>
+                    <div class="intel-stat-footer">
+                        <i class="fas fa-user-check text-green-600"></i>
+                        <span>{{ number_format($analytics['users']['verified'] ?? 0) }} verified</span>
+                        <span style="margin-left: .5rem; color: var(--intel-gray-500);">/ {{ number_format($analytics['users']['non_verified'] ?? 0) }} non-verified</span>
+                    </div>
+                </div>
+
+                <div class="intel-stat-card">
+                    <div class="intel-stat-header">
+                        <div class="intel-stat-content">
+                            <h3>Total Views</h3>
+                            <p class="value">{{ number_format($analytics['views']['total'] ?? 0) }}</p>
+                        </div>
+                        <div class="intel-stat-icon yellow"><i class="fas fa-eye"></i></div>
+                    </div>
+                    <div class="intel-stat-footer">
+                        <i class="fas fa-user text-blue-600"></i>
+                        <span>{{ number_format($analytics['views']['unique'] ?? 0) }} unique</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Window Metrics -->
+            <div class="intel-card" style="margin: 0;">
+                <div class="intel-card-header">
+                    <h3 class="intel-card-title" style="font-size: 1rem;">
+                        <i class="fas fa-clock"></i>
+                        Activity by Time Window
+                    </h3>
+                </div>
+                <div class="intel-card-body" style="overflow-x: auto;">
+                    <table class="intel-table" style="width: 100%; min-width: 720px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Window</th>
+                                <th style="text-align: right;">Logins</th>
+                                <th style="text-align: right;">PDF Downloads</th>
+                                <th style="text-align: right;">Prophecy Views</th>
+                                <th style="text-align: right;">Prophecy Prints</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php($win = $analytics['windows'] ?? [])
+                            @foreach(['today','24h','48h','72h','7d','15d','30d'] as $k)
+                                @if(isset($win[$k]))
+                                <tr>
+                                    <td>{{ $win[$k]['label'] }}</td>
+                                    <td style="text-align: right;">{{ number_format($win[$k]['logins'] ?? 0) }}</td>
+                                    <td style="text-align: right;">{{ number_format($win[$k]['downloads'] ?? 0) }}</td>
+                                    <td style="text-align: right;">{{ number_format($win[$k]['views'] ?? 0) }}</td>
+                                    <td style="text-align: right;">{{ number_format($win[$k]['prints'] ?? 0) }}</td>
+                                </tr>
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Per-User Activity & Top Prophecies -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-xl);">
+                <!-- Left: Per-User Activity -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-lg);">
+                    <div class="intel-card" style="margin: 0;">
+                        <div class="intel-card-header">
+                            <h3 class="intel-card-title" style="font-size: 1rem;"><i class="fas fa-sign-in-alt"></i> Logins by User</h3>
+                        </div>
+                        <div class="intel-card-body" style="max-height: 360px; overflow: auto;">
+                            @php($items = $analytics['per_user']['logins'] ?? collect())
+                            @if($items && count($items) > 0)
+                                <table class="intel-table" style="width: 100%;">
+                                    <thead>
+                                        <tr><th>User</th><th style="text-align:right;">Logins</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($items as $it)
+                                            <tr>
+                                                <td>{{ $it['name'] }}<div style="color: var(--intel-gray-500); font-size: .75rem;">{{ $it['email'] }}</div></td>
+                                                <td style="text-align:right;">{{ number_format($it['total']) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <p style="color: var(--intel-gray-500);">No data</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="intel-card" style="margin: 0;">
+                        <div class="intel-card-header">
+                            <h3 class="intel-card-title" style="font-size: 1rem;"><i class="fas fa-download"></i> Downloads by User</h3>
+                        </div>
+                        <div class="intel-card-body" style="max-height: 360px; overflow: auto;">
+                            @php($items = $analytics['per_user']['downloads'] ?? collect())
+                            @if($items && count($items) > 0)
+                                <table class="intel-table" style="width: 100%;">
+                                    <thead>
+                                        <tr><th>User</th><th style="text-align:right;">Downloads</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($items as $it)
+                                            <tr>
+                                                <td>{{ $it['name'] }}<div style="color: var(--intel-gray-500); font-size: .75rem;">{{ $it['email'] }}</div></td>
+                                                <td style="text-align:right;">{{ number_format($it['total']) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <p style="color: var(--intel-gray-500);">No data</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="intel-card" style="margin: 0;">
+                        <div class="intel-card-header">
+                            <h3 class="intel-card-title" style="font-size: 1rem;"><i class="fas fa-eye"></i> Views by User</h3>
+                        </div>
+                        <div class="intel-card-body" style="max-height: 360px; overflow: auto;">
+                            @php($items = $analytics['per_user']['views'] ?? collect())
+                            @if($items && count($items) > 0)
+                                <table class="intel-table" style="width: 100%;">
+                                    <thead>
+                                        <tr><th>User</th><th style="text-align:right;">Views</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($items as $it)
+                                            <tr>
+                                                <td>{{ $it['name'] }}<div style="color: var(--intel-gray-500); font-size: .75rem;">{{ $it['email'] }}</div></td>
+                                                <td style="text-align:right;">{{ number_format($it['total']) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <p style="color: var(--intel-gray-500);">No data</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Top Prophecies -->
+                <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+                    <div class="intel-card" style="margin: 0;">
+                        <div class="intel-card-header">
+                            <h3 class="intel-card-title" style="font-size: 1rem;"><i class="fas fa-arrow-up"></i> Top 5 by Downloads</h3>
+                        </div>
+                        <div class="intel-card-body">
+                            @php($items = $analytics['top_prophecies']['downloads'] ?? collect())
+                            @if($items && count($items) > 0)
+                                <ol style="margin: 0; padding-left: 1rem; display: flex; flex-direction: column; gap: .5rem;">
+                                    @foreach($items as $it)
+                                        <li><strong>{{ $it['title'] }}</strong><span style="float:right;">{{ number_format($it['total']) }}</span></li>
+                                    @endforeach
+                                </ol>
+                            @else
+                                <p style="color: var(--intel-gray-500);">No data</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="intel-card" style="margin: 0;">
+                        <div class="intel-card-header">
+                            <h3 class="intel-card-title" style="font-size: 1rem;"><i class="fas fa-arrow-up"></i> Top 5 by Views</h3>
+                        </div>
+                        <div class="intel-card-body">
+                            @php($items = $analytics['top_prophecies']['views'] ?? collect())
+                            @if($items && count($items) > 0)
+                                <ol style="margin: 0; padding-left: 1rem; display: flex; flex-direction: column; gap: .5rem;">
+                                    @foreach($items as $it)
+                                        <li><strong>{{ $it['title'] }}</strong><span style="float:right;">{{ number_format($it['total']) }}</span></li>
+                                    @endforeach
+                                </ol>
+                            @else
+                                <p style="color: var(--intel-gray-500);">No data</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="intel-card" style="margin: 0;">
+                        <div class="intel-card-header">
+                            <h3 class="intel-card-title" style="font-size: 1rem;"><i class="fas fa-arrow-up"></i> Top 5 by Prints</h3>
+                        </div>
+                        <div class="intel-card-body">
+                            @php($items = $analytics['top_prophecies']['prints'] ?? collect())
+                            @if($items && count($items) > 0)
+                                <ol style="margin: 0; padding-left: 1rem; display: flex; flex-direction: column; gap: .5rem;">
+                                    @foreach($items as $it)
+                                        <li><strong>{{ $it['title'] }}</strong><span style="float:right;">{{ number_format($it['total']) }}</span></li>
+                                    @endforeach
+                                </ol>
+                            @else
+                                <p style="color: var(--intel-gray-500);">No data</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

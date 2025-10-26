@@ -41,13 +41,145 @@ class DashboardController extends Controller
         // Get system status
         $systemStatus = $this->getSystemStatus();
 
+        // Get analytics (time windows, per-user, top items)
+        $analytics = $this->getAnalytics();
+
         return view('admin.dashboard', compact(
             'stats', 
             'recentActivities', 
             'prophecyStats', 
             'securityAlerts',
-            'systemStatus'
+            'systemStatus',
+            'analytics'
         ));
+    }
+
+    /**
+     * Build analytics: time-window metrics, per-user counts, top prophecies, unique vs total views
+     */
+    private function getAnalytics()
+    {
+        $windows = [
+            ['key' => 'today', 'label' => 'Today', 'start' => now()->startOfDay()],
+            ['key' => '24h', 'label' => 'Last 24h', 'start' => now()->copy()->subHours(24)],
+            ['key' => '48h', 'label' => 'Last 48h', 'start' => now()->copy()->subHours(48)],
+            ['key' => '72h', 'label' => 'Last 72h', 'start' => now()->copy()->subHours(72)],
+            ['key' => '7d', 'label' => 'Last 7 Days', 'start' => now()->copy()->subDays(7)],
+            ['key' => '15d', 'label' => 'Last 15 Days', 'start' => now()->copy()->subDays(15)],
+            ['key' => '30d', 'label' => 'Last 30 Days', 'start' => now()->copy()->subDays(30)],
+        ];
+
+        $eventSets = [
+            'logins' => ['login_success', 'login'],
+            'downloads' => ['prophecy_pdf_download', 'prophecy_download'],
+            'views' => ['prophecy_view'],
+            'prints' => ['prophecy_print'],
+        ];
+
+        $byWindow = [];
+        foreach ($windows as $w) {
+            $row = ['label' => $w['label']];
+            foreach ($eventSets as $key => $types) {
+                $row[$key] = SecurityLog::whereIn('event_type', $types)
+                    ->where('event_time', '>=', $w['start'])
+                    ->count();
+            }
+            $byWindow[$w['key']] = $row;
+        }
+
+        // Users: verified vs non-verified
+        $totalUsers = User::count();
+        $verifiedUsers = User::whereNotNull('email_verified_at')->where('is_active', true)->count();
+        $nonVerifiedUsers = max(0, $totalUsers - $verifiedUsers);
+
+        // Per-user counts (exclude null user_id), top 50
+        $perUser = [
+            'logins' => $this->aggregatePerUser(['login_success', 'login'], 50),
+            'downloads' => $this->aggregatePerUser(['prophecy_pdf_download', 'prophecy_download'], 50),
+            'views' => $this->aggregatePerUser(['prophecy_view'], 50),
+        ];
+
+        // Top 5 prophecies by event types
+        $top = [
+            'downloads' => $this->topPropheciesByEvents(['prophecy_pdf_download', 'prophecy_download'], 5),
+            'views' => $this->topPropheciesByEvents(['prophecy_view'], 5),
+            'prints' => $this->topPropheciesByEvents(['prophecy_print'], 5),
+        ];
+
+        // Unique vs total views (all time)
+        $totalViews = SecurityLog::where('event_type', 'prophecy_view')->count();
+        $uniqueKeys = SecurityLog::where('event_type', 'prophecy_view')
+            ->get(['user_id', 'ip_address', 'user_agent'])
+            ->map(function ($log) {
+                if (!empty($log->user_id)) {
+                    return 'u:' . $log->user_id;
+                }
+                return 'g:' . ($log->ip_address ?: '0.0.0.0') . '|' . substr((string)$log->user_agent, 0, 120);
+            })
+            ->unique()
+            ->count();
+
+        return [
+            'users' => [
+                'total' => $totalUsers,
+                'verified' => $verifiedUsers,
+                'non_verified' => $nonVerifiedUsers,
+            ],
+            'windows' => $byWindow,
+            'per_user' => $perUser,
+            'top_prophecies' => $top,
+            'views' => [
+                'total' => $totalViews,
+                'unique' => $uniqueKeys,
+            ],
+        ];
+    }
+
+    private function aggregatePerUser(array $eventTypes, int $limit = 50)
+    {
+        return SecurityLog::select('user_id', DB::raw('COUNT(*) as total'))
+            ->whereIn('event_type', $eventTypes)
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get()
+            ->map(function ($row) {
+                $user = User::find($row->user_id);
+                return [
+                    'user_id' => $row->user_id,
+                    'name' => $user?->name ?? 'Unknown',
+                    'email' => $user?->email ?? null,
+                    'total' => (int) $row->total,
+                ];
+            });
+    }
+
+    private function topPropheciesByEvents(array $eventTypes, int $limit = 5)
+    {
+        $rows = SecurityLog::select('resource_id', DB::raw('COUNT(*) as total'))
+            ->whereIn('event_type', $eventTypes)
+            ->where('resource_type', 'prophecy')
+            ->whereNotNull('resource_id')
+            ->groupBy('resource_id')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get();
+
+        $prophecyIds = $rows->pluck('resource_id')->all();
+        $prophecies = Prophecy::whereIn('id', $prophecyIds)->get(['id', 'title', 'view_count', 'download_count', 'print_count']);
+
+        return $rows->map(function ($row) use ($prophecies) {
+            $p = $prophecies->firstWhere('id', $row->resource_id);
+            return [
+                'prophecy_id' => $row->resource_id,
+                'title' => $p?->title ?? ('#' . $row->resource_id),
+                'total' => (int) $row->total,
+                'view_count' => $p?->view_count ?? 0,
+                'download_count' => $p?->download_count ?? 0,
+                'print_count' => $p?->print_count ?? 0,
+            ];
+        });
     }
     
     /**
@@ -256,6 +388,9 @@ class DashboardController extends Controller
             
             case 'security_alerts':
                 return response()->json($this->getSecurityAlerts());
+            
+            case 'analytics':
+                return response()->json($this->getAnalytics());
             
             default:
                 return response()->json(['error' => 'Invalid data type'], 400);
